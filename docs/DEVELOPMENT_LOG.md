@@ -630,3 +630,9 @@ Production build PASS; client credential scan PASS (11 assets); installed system
 Chromium production-build browser tests **22/22 PASS**. All original financial
 engine/proof files remain unchanged. No further live RPC or state-branch writes.
 Exact staged scan and GitHub validation precede integration of this fix/report.
+
+Implementation commit `fc3b7b100fac74d204230c295d330de035feee37` contains the
+checkpoint fix, malformed-code rejection, regressions and actual pilot failure
+record on `codex/stage7-pilot-failure`. This follow-up records that immutable
+implementation hash. Main integration, current-head CI and Vercel receipts must
+be observed separately; none can turn the stopped pilot into verified playback.
