@@ -31,7 +31,7 @@
     "pretest": "npm run prepare:web",
     "check:client": "node scripts/check-client-bundle.mjs",
     "analyse:position": "node --max-old-space-size=4096 --import tsx scripts/analyse-position.ts",
-    "verify:position": "node --max-old-space-size=4096 --import tsx scripts/verify-position.ts",
+    "verify:position": "node --max-old-space-size=4096 --import tsx scripts/verify-replay-position.ts",
     "verify:outcomes": "node --import tsx scripts/verify-outcomes.ts && python3 scripts/verify_outcomes.py",
     "beta": "node scripts/beta-launch.mjs",
     "beta:import": "node --import tsx scripts/beta-import.ts",

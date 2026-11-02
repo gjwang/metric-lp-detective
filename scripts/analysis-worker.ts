@@ -5,14 +5,15 @@ import { createHash } from 'node:crypto';
 import { configuredRpc, RpcFailure, type Rpc } from '../lib/chain/rpc.js';
 import { recoveryBudget } from '../lib/chain/recoveryBudget.js';
 import { collectPosition } from '../lib/analysis/collect.js';
-import { verifyPosition } from './verify-position.js';
+import { verifyReplayPosition as verifyPosition } from './verify-replay-position.js';
 import { promote } from '../lib/analysis/artifact.js';
 import { AnalysisLimit, atomicJson, context, exclusive, expire, getJob, heartbeat, jobFolder, jobs, ownerLocal, readJson, reserveRequest, updateJob } from '../lib/analysis/store.js';
 import { SERVICE_LIMITS, type AnalysisJob } from '../lib/analysis/types.js';
 import { accountingVersion } from '../lib/analysis/version.js';
+import { providerVerificationVersion } from '../lib/analysis/providerVersion';
 export async function processJob(job: AnalysisJob, suppliedRpc?: Rpc, wait?: (ms: number) => Promise<void>) {
   const current = context();
-  if (JSON.stringify(current) !== JSON.stringify(job.context) || current.accountingVersion !== accountingVersion()) { updateJob(job.key, { status: 'UNSUPPORTED', phase: 'Index/accounting version changed; rebuild and request a current job' }); return; }
+  if (JSON.stringify(current) !== JSON.stringify(job.context) || current.accountingVersion !== accountingVersion() || current.providerVerificationVersion !== providerVerificationVersion()) { updateJob(job.key, { status: 'UNSUPPORTED', phase: 'Index/accounting version changed; rebuild and request a current job' }); return; }
   if (job.attempts >= SERVICE_LIMITS.attempts) { updateJob(job.key, { status: 'FAILED', phase: 'Attempt limit reached' }); return; }
   updateJob(job.key, { status: 'RUNNING', attempts: job.attempts + 1, phase: 'Replaying the fixed pool index' });
   const rawRoot = path.join(jobFolder(job.key), 'capture'), rawUrl = pathToFileURL(rawRoot + '/');
@@ -32,7 +33,7 @@ export async function processJob(job: AnalysisJob, suppliedRpc?: Rpc, wait?: (ms
     // A captured but not-yet-promoted job is reverified without reacquiring chain data.
     if (!existsSync(path.join(rawRoot, 'config.json'))) await collectPosition(job.id, job.slug, rawUrl, cachedRpc, () => getJob(job.key)!.requests, p => updateJob(job.key, p));
     method = 'independent reconciliation'; updateJob(job.key, { phase: 'Independently reconciling raw storage, withdrawals, receipts and traces' });
-    const verified = verifyPosition(job.slug, rawUrl);
+    const verified = verifyPosition(job.slug, rawUrl, job.context.providerVerificationVersion);
     if (getJob(job.key)?.cancelled) throw new AnalysisLimit('FAILED', 'Owner cancelled analysis');
     atomicJson(path.join(rawRoot, 'verification.json'), verified.verification);
     atomicJson(path.join(rawRoot, 'status.json'), { ...readJson<Record<string, unknown>>(path.join(rawRoot, 'status.json')), status: 'VERIFIED', phase: 'Independent reconciliation passed', requests: getJob(job.key)!.requests });
@@ -40,8 +41,9 @@ export async function processJob(job: AnalysisJob, suppliedRpc?: Rpc, wait?: (ms
   } catch (e) {
     const state = e instanceof AnalysisLimit ? e.state : e instanceof RpcFailure && ['rate', 'quota'].includes(e.kind) ? 'RATE_LIMITED' : e instanceof Error && /mark|reference/i.test(e.message) ? 'PARTIAL' : 'FAILED';
     const message = e instanceof RpcFailure || e instanceof AnalysisLimit ? e.message : state === 'PARTIAL' ? 'Required historical reference marks are incomplete. Captured token proof is retained; replay publication awaits the missing valuation inputs.' : 'Independent capture/verification failed; replay remains locked. Owner review is required.';
-    updateJob(job.key, { status: state, phase: 'Stopped; replay remains locked', error: message, method: e instanceof RpcFailure ? e.method ?? method : method });
-    console.error(JSON.stringify({ key: job.key, state, method: e instanceof RpcFailure ? e.method ?? method : method, error: message }));
+    const stoppedMethod = e instanceof RpcFailure || e instanceof AnalysisLimit ? e.method ?? method : method;
+    updateJob(job.key, { status: state, phase: 'Stopped; replay remains locked', error: message, method: stoppedMethod });
+    console.error(JSON.stringify({ key: job.key, state, method: stoppedMethod, error: message }));
   }
 }
 if (process.argv[1]?.endsWith('analysis-worker.ts')) {

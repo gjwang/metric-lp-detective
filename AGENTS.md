@@ -126,3 +126,20 @@ you. These instructions persist across future Codex tasks.
   GITHUB_TOKEN pushes do not trigger CI; explicitly dispatch the existing read-only
   Validate workflow at the evidence branch. Never spoof required checks or bypass
   protection. Main merge and successful Vercel/public replay are separate gates.
+
+## Stage 8 provider-level proof boundaries
+
+- Read docs/STAGE_8.md. Provider address/salt attribution is separate from
+  beneficial ownership. Valid canonical contract/delegation code may proceed
+  through schema-2 provider-level analysis; controller identity stays UNKNOWN.
+  Null/malformed/noncanonical code must stop. Never claim control or downstream
+  user payouts from a pool position or an eth_call withdrawal simulation.
+- Preserve the immutable legacy verifier, accountingVersion and original four
+  fixtures. Fresh jobs use verify-replay-position dispatch and require complete
+  canonical account evidence plus every zero-tolerance financial check; they
+  cannot fall back to legacy proofs. Once published, new proof protocols also
+  require version-safe migrations rather than rewriting their verification rules.
+- A proof-version change cannot reset an unexpired legacy job. Old run
+  41442682018's 31-attempt reservation remains consumed and its raw code/position
+  checkpoint are unavailable. Stage 8's 28-expected/33-hard-limit proposal is NOT
+  live authority; obtain fresh named position/day/attempt approval before RPC.

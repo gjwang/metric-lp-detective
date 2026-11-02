@@ -82,6 +82,11 @@ describe('real source-specific direct-provider discovery', () => {
     const unknown = '0x000000000000000000000000000000000000dead:0';
     expect(await (await analysisInfo(new Request('http://local/api/analysis?positionId=' + unknown))).json()).toMatchObject({ eligibility: 'NO_INDEXED_POSITION', job: null });
   });
+  it('keeps contract-provider analysis separate from unknown beneficial ownership and retained failed-run history', async () => {
+    const id = '0xa598e2658ef74196f498b00b289a7d5d64a42cd7:615031639178913965778603';
+    const response = await analysisInfo(new Request('http://local/api/analysis?positionId=' + id));
+    expect(await response.json()).toMatchObject({ queueAvailable: false, job: null, providerAnalysis: { scope: 'PROVIDER_POSITION_ONLY', beneficialOwner: 'UNKNOWN', accountType: 'ACCOUNT_TYPE_UNCONFIRMED', validContractProvidersSupported: true }, previousRun: { loggedAttempts: 4, checkpointed: false, state: 'STOPPED_BEFORE_RECONCILIATION', runUrl: 'https://github.com/projectuwb/metric-lp-detective/actions/runs/41442682018' } });
+  });
   it.each([0, 1, 9, 100, 101, 10000])('count preflight gives an honest bounded route for %i swaps', swaps => {
     const plan = replayEligibility({ swaps, checkpoints: 7, traces: swaps, fundingTransactions: 3 }, true);
     expect(plan.mode).toBe(swaps <= 9 ? 'OWNER_PILOT' : 'STAGED_OWNER_REVIEW');

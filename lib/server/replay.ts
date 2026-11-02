@@ -8,6 +8,7 @@ const root = path.join(process.cwd(), '.web-data');
 function read<T>(file: string): T { return JSON.parse(readFileSync(path.join(root, file), 'utf8')) as T; }
 export const getRegistry = () => read<{ id: string; directory: string; label: string }[]>('registry.json');
 export const getDiscoveryCoverage = () => read<DiscoveryCoverage>('discovery.json');
+export const getOwnerRunHistory = () => read<{ id: string; runUrl: string; loggedAttempts: number; state: string; accountType: string; checkpointed: boolean }[]>('owner-run-history.json');
 function directory(id?: string) {
   const entry = id ? getRegistry().find(r => r.id === id) : getRegistry()[0];
   return entry ? entry.directory ? entry.directory + '/' : '' : null;

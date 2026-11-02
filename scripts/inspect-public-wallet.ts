@@ -1,7 +1,7 @@
 // Shared read-only interaction: local regressions and actual public acceptance.
 import { expect, type Page, type BrowserContext } from '@playwright/test';
 import { tokens } from '../lib/domain/format';
-export async function inspectWallet(page: Page, context: BrowserContext, origin: string, id: string, expectedReady: boolean, commit: string | null, mode: 'LOCAL_REGRESSION' | 'REAL_PUBLIC_BROWSER_NO_RPC') {
+export async function inspectWallet(page: Page, context: BrowserContext, origin: string, id: string, expectedReady: boolean, commit: string | null, mode: 'LOCAL_REGRESSION' | 'REAL_PUBLIC_BROWSER_NO_RPC', requireProviderProof = false) {
   await page.goto(origin, { waitUntil: 'networkidle', timeout: 30000 });
   await page.getByLabel('START WITH A PUBLIC WALLET').fill(id.split(':')[0]);
   await page.getByRole('button', { name: 'Find positions', exact: true }).click();
@@ -17,7 +17,9 @@ export async function inspectWallet(page: Page, context: BrowserContext, origin:
     const metaResponse = await context.request.get(origin + '/api/replay?id=' + encodeURIComponent(id));
     if (!metaResponse.ok()) throw new Error('Published position metadata is unavailable');
     const meta = await metaResponse.json();
+    if (requireProviderProof && !meta.providerIdentity) throw new Error('The fresh pilot requires its independently verified provider-level identity and scope');
     if (meta.id !== id || !meta.closed || !Number.isSafeInteger(meta.eventCount) || meta.eventCount > 1000) throw new Error('Acceptance requires this small, fully closed independently verified position');
+    if (meta.providerIdentity) { await expect(page.getByLabel('Provider-level attribution')).toContainText('beneficial owner unknown'); if (meta.providerIdentity.scope !== 'PROVIDER_POSITION_ONLY' || meta.providerIdentity.beneficialOwner !== 'UNKNOWN') throw new Error('Invalid provider/controller attribution'); proof.providerIdentity = meta.providerIdentity; }
     const events: any[] = [];
     for (let p = 0; p < Math.ceil(meta.eventCount / meta.pageSize); p++) { const response = await context.request.get(origin + '/api/replay/' + encodeURIComponent(id) + '/events?page=' + p); if (!response.ok()) throw new Error('Published event page missing'); events.push(...(await response.json()).events); }
     for (const e of events) {

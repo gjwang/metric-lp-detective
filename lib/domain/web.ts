@@ -1,3 +1,4 @@
+import type { ProviderIdentity } from './providerIdentity';
 export type Amounts = [string, string];
 export interface BinChange { bin: string; logIndex: string; sharesBefore: string; sharesAfter: string; totalBefore: string; totalAfter: string; before: Amounts; after: Amounts }
 export interface ReplayEvent {
@@ -12,6 +13,7 @@ export interface FundingPoint { index: number; block: string; tokens: Amounts; t
 export interface Milestone { index: number; block: string; kind: 'INITIAL_DEPOSIT' | 'ADD' | 'PARTIAL_WITHDRAWAL' | 'FULL_CLOSE' | 'REENTRY' }
 export interface BlockMark { block: string; blockHash: string; timestamp: string; referenceX64: string; kind: 'BLOCK_END' }
 export interface ReplayMeta {
+  providerIdentity?: ProviderIdentity;
   milestones: Milestone[];
   label: string; closed: boolean; initialFunding: Amounts; funding: FundingPoint[]; marks: BlockMark[];
   id: string; eventCount: number; pageSize: number; from: string; through: string; final: Amounts;

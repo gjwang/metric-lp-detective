@@ -26,7 +26,7 @@ try {
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
   if (!release) throw new Error('Expected production commit/registry was not observed within eight minutes; public deployment NOT VERIFIED');
-  const proof = await inspectWallet(page, context, base.origin, id, expectedReady, sha, 'REAL_PUBLIC_BROWSER_NO_RPC');
+  const proof = await inspectWallet(page, context, base.origin, id, expectedReady, sha, 'REAL_PUBLIC_BROWSER_NO_RPC', config.requireProviderProof === true);
   if (violations.length) throw new Error('Browser attempted a forbidden RPC or job submission');
   console.log('PUBLIC_BROWSER_PROOF ' + JSON.stringify(proof));
 } finally { await browser.close(); }

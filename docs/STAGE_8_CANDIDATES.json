@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "status": "OFFLINE_PROPOSAL_NO_LIVE_AUTHORITY",
+  "checkedThrough": "130841348",
+  "scope": "PROVIDER_POSITION_ONLY",
+  "newRpcAttempts": 0,
+  "proposedUtcDay": "2026-11-03",
+  "notBeforeUtc": "2026-11-03T00:00:00Z",
+  "maxProviderChargesUsd": "0",
+  "resumeCheckpoint": false,
+  "primary": {
+    "id": "0x5f2d7522799d5d2d5dd7de66a16cdf86654cb190:1044581382818305908510560",
+    "confidence": "INDEX_PREFLIGHT_NOT_INDEPENDENTLY_VERIFIED",
+    "from": "126502643",
+    "through": "130841348",
+    "swaps": 0,
+    "checkpoints": 5,
+    "traces": 0,
+    "accountType": "ACCOUNT_TYPE_UNCONFIRMED",
+    "analyticsScope": "PROVIDER_POSITION_ONLY",
+    "beneficialOwner": "UNKNOWN",
+    "accountEligibility": "Requires a valid canonical historical code response; event counts never prove account type",
+    "expected": {
+      "methods": {
+        "eth_chainId": 1,
+        "eth_getCode": 2,
+        "eth_getBlockByNumber": 13,
+        "eth_call": 10,
+        "eth_getTransactionReceipt": 2,
+        "debug_traceTransaction": 0
+      },
+      "total": 28
+    },
+    "hardLimit": 33,
+    "events": [
+      {
+        "type": "deposit",
+        "block": "129094689",
+        "transactionHash": "0xafaa046914574013344de5cde5af4336ed03894ffbdb5e0d24cc3b80a2074dd7"
+      },
+      {
+        "type": "withdrawal",
+        "block": "129094959",
+        "transactionHash": "0x0baa72876252ecfa7583eeb271948e7d800874f2a965fe38b2a997b2ce6af7fe"
+      }
+    ],
+    "closedInIndex": true,
+    "moneyAuthorised": false,
+    "liveRequestsIssued": 0
+  },
+  "alternativeOnly": {
+    "id": "0xa598e2658ef74196f498b00b289a7d5d64a42cd7:615031639178913965778603",
+    "confidence": "INDEX_PREFLIGHT_NOT_INDEPENDENTLY_VERIFIED",
+    "from": "126502643",
+    "through": "130841348",
+    "swaps": 0,
+    "checkpoints": 5,
+    "traces": 0,
+    "accountType": "ACCOUNT_TYPE_UNCONFIRMED",
+    "analyticsScope": "PROVIDER_POSITION_ONLY",
+    "beneficialOwner": "UNKNOWN",
+    "accountEligibility": "Requires a valid canonical historical code response; event counts never prove account type",
+    "expected": {
+      "methods": {
+        "eth_chainId": 1,
+        "eth_getCode": 2,
+        "eth_getBlockByNumber": 13,
+        "eth_call": 10,
+        "eth_getTransactionReceipt": 2,
+        "debug_traceTransaction": 0
+      },
+      "total": 28
+    },
+    "hardLimit": 33,
+    "events": [
+      {
+        "type": "deposit",
+        "block": "128019133",
+        "transactionHash": "0xeddfd9498345c1b5fe4949b5e3f0ff8c7b64edbbceb297b070b9074004dce091"
+      },
+      {
+        "type": "withdrawal",
+        "block": "128019250",
+        "transactionHash": "0x4fb80e5ad5d73a6b2dafedeb4948045208b6b059ff8fb887ec324b42bfb06eec"
+      }
+    ],
+    "closedInIndex": true,
+    "moneyAuthorised": false,
+    "liveRequestsIssued": 0
+  },
+  "fallbackNotBeforeUtc": "2026-11-03T12:15:00Z",
+  "accountTypes": "Both UNKNOWN until valid canonical code observation; no EOA claim from event counts",
+  "receiptScope": "Both candidates have isolated pool LiquidityAdded and LiquidityRemoved transactions in the saved index; actual token receipts remain unverified",
+  "priorPilot": "Run 41442682018 approval consumed, 31-attempt reservation retained; no rerun authorised"
+}

@@ -66,6 +66,12 @@ export function requireResume(state: RemoteState, key: string, resume: boolean, 
   if (previous && !resume) throw new Error('An unexpired job already exists. Explicit checkpoint resume is required; a fresh dispatch cannot reset its lifetime budget.');
   if (resume && (!previous || state.snapshot?.key !== key || state.snapshot.runId !== previous.runId)) throw new Error('The latest attempt has no matching durable checkpoint. Its spent requests are unknown; resume is refused until job expiry.');
 }
+export function refuseActiveLegacyJob(state: RemoteState, id: string, c: AnalysisContext, now = Date.now()) {
+  if (!c.providerVerificationVersion) return;
+  const { providerVerificationVersion: _version, ...legacy } = c;
+  // A new proof protocol cannot reset an unexpired legacy position's counters.
+  requireResume(state, jobKey(id, legacy), false, now);
+}
 export function reserveRun(state: RemoteState, runId: string, key: string, now = new Date(), expiresAt = new Date(now.getTime() + 86400000).toISOString()): RemoteState {
   checkedState(state);
   if (!hash(key) || !/^\d{1,20}$/.test(runId)) throw new Error('Invalid reservation identity');
@@ -130,7 +136,7 @@ export async function saveRunCheckpoint(api: GitHub, state: RemoteState, head: s
   return saveState(api, state, currentHead, 'Save sanitized public-chain checkpoint for owner run ' + runId);
 }
 
-const allowed = /^(?:job\.json|capture\/(?:capture-context|config|states|marks|quotes|status|verification)\.json|capture\/receipts\/0x[a-f0-9]{64}\.json|capture\/traces\/0x[a-f0-9]{64}\.json\.gz|cache\/[a-f0-9]{64}\.json)$/;
+const allowed = /^(?:job\.json|capture\/(?:capture-context|config|states|marks|quotes|status|verification|provider-account)\.json|capture\/provider-code\.json\.gz|capture\/receipts\/0x[a-f0-9]{64}\.json|capture\/traces\/0x[a-f0-9]{64}\.json\.gz|cache\/[a-f0-9]{64}\.json)$/;
 export function snapshot(folder: string, key: string, c: AnalysisContext, runId: string, expiresAt: string): Snapshot {
   const files: Record<string, string> = {};
   function walk(dir: string) {
