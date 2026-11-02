@@ -714,3 +714,10 @@ identity, never raw code/controller claims. Workflow YAML parsing and diff
 checks PASS. Cloud status briefly advertised starting in the UI but authoritative
 current runtime status remained running/connected; workspace and validation
 outputs are retained. No environment rebuild or extra live RPC occurred.
+
+Implementation `e84d826b63d436c84a489321444a6e2e2afc5a1d` contains Stage 8 on
+`codex/stage8-provider-replay`. Exact staged scan checked all 41 files with zero
+findings; original financial verifier/version/fixtures are unchanged from main.
+This follow-up records the implementation hash. Branch push, current-head CI,
+normal merge and public deployment/acceptance must be observed separately; none
+is authority for the pending 33-attempt live proposal or evidence of a fifth LP.
