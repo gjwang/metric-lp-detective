@@ -2,8 +2,8 @@
 import { appendFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { authorizeRun, contextHash, github, loadState, saveState, reserveBudgetedRun, requireResume, snapshot, restoreSnapshot, reservationRpc, rejectSecrets, REPOSITORY, WORKFLOW, type RunIdentity } from '../lib/analysis/remote';
-import { usagePolicy, policyHash, usageMeter, checkpointUsage, usageSummary, formatNanoUsd, type UsageAllocation } from '../lib/analysis/usageBudget';
+import { authorizeRun, contextHash, github, loadState, saveState, saveRunCheckpoint, reserveBudgetedRun, requireResume, snapshot, restoreSnapshot, reservationRpc, rejectSecrets, REPOSITORY, WORKFLOW, type RunIdentity } from '../lib/analysis/remote';
+import { usagePolicy, policyHash, usageMeter, usageSummary, formatNanoUsd, type UsageAllocation } from '../lib/analysis/usageBudget';
 import { atomicJson, context, getJob, jobFolder, jobKey, readJson, storeRoot, submit, updateJob } from '../lib/analysis/store';
 import { positionIdentity } from '../lib/domain/position';
 import { positionPlan } from '../lib/analysis/collect';
@@ -67,10 +67,11 @@ async function main() {
     const saved = control(), job = getJob(saved.key);
     if (!job) throw new Error('Missing admitted job');
     const api = github(), loaded = await loadState(api);
-    if (!loaded.state.reservations.some(r => r.runId === run.runId && r.key === saved.key)) throw new Error('Durable reservation missing; checkpoint refused');
-    loaded.state.snapshot = snapshot(jobFolder(saved.key), saved.key, context(), run.runId, new Date(Math.min(Date.parse(job.expiresAt), Date.now() + 86400000)).toISOString());
-    if (existsSync(path.join(storeRoot(), 'usage-attempts.json'))) loaded.state.usage = checkpointUsage(loaded.state.usage!, usagePolicy(), readJson<UsageAllocation>(path.join(storeRoot(), 'usage-attempts.json')));
-    await saveState(api, loaded.state, loaded.head, 'Save sanitized public-chain checkpoint for owner run ' + run.runId);
+    const meterFile = path.join(storeRoot(), 'usage-attempts.json');
+    if (!existsSync(meterFile) && job.requests > saved.initialRequests) throw new Error('Transport attempt meter is missing; full reservation retained, no resumable checkpoint saved');
+    const usage = existsSync(meterFile) ? readJson<UsageAllocation>(meterFile) : undefined;
+    await saveRunCheckpoint(api, loaded.state, loaded.head, run.runId, saved.key, usagePolicy(), usage,
+      () => snapshot(jobFolder(saved.key), saved.key, context(), run.runId, new Date(Math.min(Date.parse(job.expiresAt), Date.now() + 86400000)).toISOString()));
     const costs = usageSummary(loaded.state.usage!, usagePolicy());
     summary(`Durable remote checkpoint saved. State ${job.status}; ${job.requests} lifetime attempts. Cumulative reserved cost upper bound ${formatNanoUsd(costs.reservedNanoUsd)}; remaining authorised provider credit ${formatNanoUsd(costs.remainingNanoUsd)}. Hard cancellation cannot refund or reset the reserved requests/cost.`);
   } else if (command === 'export') {

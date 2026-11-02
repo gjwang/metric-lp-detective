@@ -1,8 +1,55 @@
 # Stage 7 — new-wallet release gate (NOT COMPLETE)
 
 Stage 6 main: `5cf3a38f9b8ac9366c70be879b7f8a5a5ad5e1bc` (PR #15).
-No fifth position has been independently reconstructed by this development yet.
-No new RPC attempts, payments, account changes, secrets or infrastructure.
+Stage 7 implementation merged at `1168aba3e1f0f8badd2b3a871e0a6ed1877b9800` (PR #17).
+The approved fifth-position pilot ran once and stopped after **4 RPC attempts**
+before independent position reconciliation. No verified fifth replay exists.
+No payments, account/secret changes, index scans or infrastructure changes.
+
+## Actual fifth pilot — stopped, do not rerun
+
+[Owner run 41442682018](https://github.com/projectuwb/metric-lp-detective/actions/runs/41442682018)
+was dispatched by the owner on main at **11:11 p.m. Sydney, 2 November 2026**
+(12:11:38 UTC), inside the approved day/window. Its admitted position/key match
+the named approval exactly; 31 attempts were reserved, Free/$0, resume off.
+It stopped after chain identity, pinned-head hash, pool runtime and provider-code
+reads: **4 transport attempts**, no traces, 0/5 inventory checkpoints.
+
+The prior guard saw a historical provider-code response unequal to `0x` and
+returned `UNSUPPORTED: Contract-provider beneficial ownership requires separate
+proof`. The raw code was not retained remotely, so contract implementation,
+manager ownership, EIP-7702 delegation or a malformed/null response cannot be
+independently distinguished. The original guard did not validate the response
+type; the fix now rejects malformed code as invalid RPC data rather than
+classifying it as a contract. Valid nonempty code still stops for ownership review.
+Do not infer beneficial wallet ownership or remove the guard to get a green run.
+The offline candidate was feasible by event count, not proven eligible by
+provider account type; that dependency could only be tested during this pilot.
+
+The snapshot step also failed. GitHub exposes the unset optional `LP_RPC_URL`
+as an empty string; the scanner treated that as an invalid configured URL.
+This was independently reproduced offline. The fix accepts an absent/empty
+optional variable while still rejecting malformed nonempty URLs and scanning
+all configured credentials. Future checkpoint handling saves actual usage
+counters first, so rejected snapshots cannot discard their durable accounting.
+
+The actual state-branch receipt retains the **entire 31-attempt reservation**,
+$0 reserved charges, `attempts: 0, checkpointed: false` (the initial allocation,
+NOT actual zero usage), and only an old other-position snapshot. The runner log
+records **4** attempts. This lost checkpoint cannot be repaired by fabricating a
+local meter or replaying calls; no ledger counter/reservation was reset/refunded.
+The preserved evidence is `fixtures/research/stage7-fifth-pilot-failure.json`.
+It is failure research, never a verified position artifact or replay registration.
+
+No state/withdrawal checkpoint, funding receipt, reference mark, selected-point
+PnL or zero-discrepancy reconciliation was obtained. The indexed position still
+has **zero attributable swaps**; no execution quotes were invented.
+
+The single approved fresh run has been used. **No further live requests, fresh
+dispatch, resume or rerun are authorised.** No additional owner action is needed
+for this stopped run. Any future live work needs a separate named approval after
+provider-ownership eligibility is resolved; it is not part of the remaining
+reservation. Existing four verified replays and accounting remain unchanged.
 
 ## Offline candidate and explicit approval boundary
 
@@ -30,25 +77,18 @@ historical calls 10 (five storage, two withdrawal simulations, three marks),
 funding receipts 2, traces 0. The actual owner job's durable meter enforces its
 31-attempt reservation; no automatic retries, paid fallback or index scan.
 
-**Approval pending:** one pilot on **2 November 2026 UTC**, no earlier than
-**11:00 a.m. Sydney on 2 November**. The previous UTC day's legacy 100-request
-reservation remains fully consumed. The old 12-call Stage 6 research approval
-is not authorization for this reconstruction. No run should start without the
-new position/count/day approval. No charge is authorized.
+**Approval executed once; no retry authorised.** The 26/31 figures above were
+preflight predictions. Actual usage and failure are recorded in the preceding
+section. The old 12-call research allowance and this stopped run cannot fund
+another wallet, scan or retry. No charge is authorised.
 
-After approval, the owner opens the existing site's public wallet field, enters
-`0xa598e2658ef74196f498b00b289a7d5d64a42cd7`, selects salt
-`615031639178913965778603`, copies its ID, follows **Open owner-run workflow**,
-and submits **Run workflow** on main with that ID and resume **off**. Existing
-GitHub login and installed `BNB_RPC_URL` secret suffice. No local program,
-download, credential paste, manual registration or PR management is needed.
-The website handoff submits no job and claims no processing progress.
+The public route remains wallet input → position/salt → owner handoff, not an
+anonymous job trigger. The owner already performed the Run action for this
+candidate; **do not perform it again**. The installed RPC secret needs no change.
 
-Connected GitHub tools in this session have no workflow-dispatch operation;
-the cloud's enforced network allowlist excludes `api.github.com`. One actual
-owner Run action is therefore required. Never work around that policy or ask
-for an exposed write token. After dispatch, Codex can monitor, review and merge
-the validated evidence branch with the connected GitHub tools.
+Connected GitHub tools still expose no workflow dispatch; the cloud network
+allowlist excludes api.github.com. Neither limitation caused this run's failure:
+the actual owner dispatch succeeded, then the eligibility guard stopped work.
 
 ## Actual public operational acceptance
 
@@ -148,11 +188,46 @@ is needed for this proposal and none is enabled.
 | Old-window provider/salt discovery | Existing checked 236-position index |
 | Later liquidity discovery | Bounded owner workflow implemented; not live refreshed |
 | Later full accounting | Bounded capture/reconciliation candidate workflow implemented; not live run |
-| Fifth independent reconstruction | Pending exact pilot approval and actual owner dispatch |
-| Public fifth-wallet replay | NOT VERIFIED; release gate remains open |
+| Fifth independent reconstruction | Actual owner run stopped UNSUPPORTED after 4 requests; no retry authorised |
+| Public fifth-wallet replay | Unavailable: no independently reconciled artifact; release gate remains open |
 | Anonymous reconstruction | Not authorized or enabled |
 | Larger positions | Existing job/checkpoint/trace limits apply; staged work required |
 
 Existing accounting/PnL math, four verified proofs, partial contributions and
 withdrawals, actual-token bridge, selected-point comparisons, infeasible holding
 explanations and clearly hypothetical settlement conversions are preserved.
+
+## Safe expansion after this failed pilot (not activated)
+
+Account type is an eligibility dependency, not an inference from a short
+liquidity history. A future preflight must separately label `account code not
+yet checked`, `empty historical code`, `contract code`, or `delegation/ownership
+unresolved`, retaining the actual sanitized code hash/type observation. Nonempty
+code alone does not prove a managed wallet's beneficial owner. To support direct
+contract-provider analysis, first specify the identity being proved (the exact
+provider/salt versus an underlying wallet), audit the provider/delegation path,
+then retain the same LP-specific state, receipt, withdrawal and mark checks.
+The current guard has not been disabled and this run cannot be continued.
+
+For positions above ten trace transactions, buying credit or splitting fresh
+jobs cannot reset today's caps. The safe design is one source-bound parent job
+with immutable trace/checkpoint manifests, cumulative lifetime counters and
+separately approved per-day phases. Each saved trace must match all ordered
+pool swaps/native deltas in its transaction; final promotion still requires
+complete witnesses, independent state/removal/receipt checks and all marks.
+Lost/latest-checkpoint refusal and canonical checks remain mandatory.
+
+A concrete arithmetic example (NOT a new wallet observation): 16 checkpoints,
+13 withdrawal simulations, 14 marks, two receipts and 11 traces require 92
+uninterrupted calls. Resuming after ten traces adds 18 canonical/identity reads,
+for about **110 total** before failures. Therefore even two days of <=10 traces
+cannot safely fit that example under the current 100-attempt lifetime cap.
+A possible future explicitly approved 150-attempt parent ceiling, retaining
+<=100/day and <=10 traces/day, would need a real phase planner and independent
+completion gate. It is **not implemented or enabled**, and this pilot approval
+cannot authorise it. No quota, trace, checkpoint or lifetime limit changed here.
+
+Recent-wallet expansion still needs separate bounded liquidity discovery and
+full-accounting capture approvals, followed by versioned LP-specific proof
+integration. Neither the four eligibility reads nor a provider identity fix
+extends accounting beyond 130841348.

@@ -6,5 +6,8 @@
   "expectedRequests": 26,
   "hardLimit": 31,
   "budgetDay": "2026-11-02",
-  "rpcApproval": "PENDING_OWNER_APPROVAL"
+  "rpcApproval": "EXECUTED_ONCE_STOPPED_NO_RETRY_AUTHORISED",
+  "actualRunUrl": "https://github.com/projectuwb/metric-lp-detective/actions/runs/41442682018",
+  "actualRunnerLoggedAttempts": 4,
+  "reconstructionStatus": "UNSUPPORTED_PROVIDER_OWNERSHIP_REVIEW_REQUIRED"
 }

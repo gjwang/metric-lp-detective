@@ -4,7 +4,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
-import { authorizeRun, reserveRun, requireResume, checkedState, github, loadState, saveState, snapshot, restoreSnapshot, rejectSecrets, reservationRpc, type GitHub, type Snapshot } from '../lib/analysis/remote';
+import { authorizeRun, reserveRun, reserveBudgetedRun, requireResume, checkedState, github, loadState, saveState, saveRunCheckpoint, snapshot, restoreSnapshot, rejectSecrets, reservationRpc, type GitHub, type Snapshot, type RemoteState } from '../lib/analysis/remote';
+import { usagePolicy, type UsageAllocation } from '../lib/analysis/usageBudget';
 import { atomicJson, context, submit, jobFolder, readJson } from '../lib/analysis/store';
 import { SMALL_SAMPLE_ID } from '../lib/domain/samples';
 const folders: string[] = [];
@@ -91,6 +92,39 @@ it('roundtrips bounded public checkpoint files and preserves lifetime usage and 
   expect(() => restoreSnapshot(s, path.join(temporary(), 'bad'), job.key, { ...c, sourceHash: 'changed' })).toThrow('another position');
   expect(() => restoreSnapshot(s, path.join(temporary(), 'bad'), job.key, c, Date.parse(s.expiresAt) + 1)).toThrow('expired');
   expect(() => restoreSnapshot({ ...s, sha256: '0'.repeat(64) }, path.join(temporary(), 'bad'), job.key, c)).toThrow('checksum');
+});
+it('retains a stopped-job checkpoint when an optional Actions RPC secret is empty, without weakening secret checks', () => {
+  vi.stubEnv('LP_RPC_URL', '');
+  const { c, job, s } = capture(), destination = path.join(temporary(), 'empty-optional-secret');
+  restoreSnapshot(s, destination, job.key, c);
+  expect(readJson(path.join(destination, 'job.json')).key).toBe(job.key);
+  vi.stubEnv('LP_RPC_URL', 'not-a-valid-url');
+  expect(() => rejectSecrets('public chain checkpoint')).toThrow('Invalid RPC configuration');
+  vi.stubEnv('LP_RPC_URL', 'https://example.invalid/opaque-alternate-placeholder-credential');
+  expect(() => rejectSecrets('opaque-alternate-placeholder-credential')).toThrow('Credential');
+});
+it('durably saves actual transport counts before a snapshot failure, keeping the full reservation and blocking stale resume', async () => {
+  const policy = usagePolicy(), key = 'a'.repeat(64), now = new Date('2026-11-02T12:00:00Z');
+  const state = reserveBudgetedRun({ schema: 1, reservations: [] }, '123', key, policy, 31, 0, 'analysis', now);
+  const usage: UsageAllocation = { ...state.usage!.allocations[0], attempts: 4, methods: { eth_chainId: 1, eth_getBlockByNumber: 1, eth_getCode: 2 } };
+  let persisted: RemoteState | undefined, head = 'before';
+  const api: GitHub = { async request(method, route, body: any) {
+    if (method === 'POST' && route.endsWith('/git/blobs')) { persisted = JSON.parse(body.content); return { sha: 'blob' }; }
+    if (method === 'POST' && route.endsWith('/git/trees')) return { sha: 'tree' };
+    if (method === 'POST' && route.endsWith('/git/commits')) return { sha: 'after' };
+    if (method === 'PATCH') { expect(body.force).toBe(false); head = body.sha; return {}; }
+    if (method === 'GET') return { object: { sha: head } };
+    throw new Error('Unexpected test control-plane request');
+  } };
+  const capture = vi.fn(() => { throw new Error('Snapshot rejected for this regression'); });
+  await expect(saveRunCheckpoint(api, state, 'before', '123', key, policy, usage, capture)).rejects.toThrow('Snapshot rejected');
+  expect(capture).toHaveBeenCalledTimes(1);
+  expect(persisted!.usage!.allocations[0]).toMatchObject({ requests: 31, attempts: 4, checkpointed: true, reservedNanoUsd: '0', methods: usage.methods });
+  expect(persisted!.snapshot).toBeUndefined(); expect(persisted!.reservations[0].requests).toBe(31);
+  expect(() => requireResume(persisted!, key, true, now.getTime())).toThrow('latest attempt');
+  const foreign = vi.fn(() => { throw new Error('Must never capture'); });
+  await expect(saveRunCheckpoint(api, state, head, '123', key, policy, { ...usage, runId: '124' }, foreign)).rejects.toThrow('another run');
+  expect(foreign).not.toHaveBeenCalled();
 });
 it('rejects path traversal, foreign identities, exhausted attempt counts and credentials before restoring', () => {
   const { c, job, s } = capture();

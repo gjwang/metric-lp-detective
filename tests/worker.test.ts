@@ -66,3 +66,23 @@ it('real saved evidence: failed request, bounded retry, independent promotion, i
   const file = path.join(jobFolder(job.key), 'replay/events-0.json'); writeFileSync(file, '[]');
   expect(() => runtimePage(job.id, 0)).toThrow('checksum');
 }, 90000);
+it.each([
+  { name: 'contract code', code: '0x6000', status: 'UNSUPPORTED', error: 'Contract-provider beneficial ownership requires separate proof' },
+  { name: 'invalid response', code: null, status: 'FAILED', error: 'RPC invalid' },
+])('stops a provider with $name after the four eligibility reads, with no invented position proof', async ({ code, status, error }) => {
+  // Synthetic nonempty bytecode is an eligibility vector, NOT the failed
+  // pilot's raw provider code (which was not retained by that runner).
+  folder = mkdtempSync(path.join(os.tmpdir(), 'metric-code-provider-')); vi.stubEnv('LP_ANALYSIS_DIR', folder); vi.stubEnv('LP_ANALYSIS_MODE', 'owner-local'); vi.stubEnv('VERCEL', '');
+  const id = '0xa598e2658ef74196f498b00b289a7d5d64a42cd7:615031639178913965778603', c = context(), job = submit(id, c).job;
+  const calls: string[] = [];
+  await processJob(job, async (method, params) => {
+    calls.push(method);
+    if (method === 'eth_chainId') return '0x38';
+    if (method === 'eth_getBlockByNumber') return { hash: c.indexEndHash };
+    if (method === 'eth_getCode') return params[0] === id.split(':')[0] ? code : JSON.parse(readFileSync('fixtures/raw/code-and-identity.json', 'utf8')).runtimeCode;
+    throw new Error('No historical inventory/receipt/trace read is permitted after eligibility refusal');
+  }, async () => {});
+  expect(calls).toEqual(['eth_chainId', 'eth_getBlockByNumber', 'eth_getCode', 'eth_getCode']);
+  expect(getJob(job.key)).toMatchObject({ status, requests: 4, completedCheckpoints: 0, error });
+  expect(runtimeMeta(id)).toBeNull();
+}, 60000);
