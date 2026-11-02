@@ -636,3 +636,12 @@ checkpoint fix, malformed-code rejection, regressions and actual pilot failure
 record on `codex/stage7-pilot-failure`. This follow-up records that immutable
 implementation hash. Main integration, current-head CI and Vercel receipts must
 be observed separately; none can turn the stopped pilot into verified playback.
+
+CI on `b292a939228e0ff1ea8e47de041fcc6fccbb01c6`: push Validate
+41444910157 PASS; PR Validate 41445011574 FAIL despite all 132 assertions
+passing, due to Vitest inter-process `onTaskUpdate` reporting timeout. The
+failed run is retained and was not bypassed or relabelled. Full ledger replays
+are CPU-heavy; test files now run serially to avoid contention on shared
+runners. All assertions, unhandled-error checks and timeouts remain enabled.
+Final serialized local suite: **132/132 PASS, 20 suites**, typecheck PASS. No
+blockchain RPC, active quotas, financial calculations or proof gates changed.
