@@ -46,6 +46,8 @@ describe('bounded account facts, not beneficial ownership', () => {
   });
   it('does not use a new proof protocol to reset an unexpired legacy reservation', () => {
     const c = context(), { providerVerificationVersion: _v, ...legacy } = c, id = '0xa598e2658ef74196f498b00b289a7d5d64a42cd7:615031639178913965778603';
+    // Compare to the real consumed reservation, not just a self-generated key.
+    expect(jobKey(id, legacy)).toBe(read('fixtures/research/stage7-fifth-pilot-failure.json').jobKey);
     const now = new Date('2026-11-02T12:12:24Z'), state = reserveBudgetedRun({ schema: 1, reservations: [] }, '123', jobKey(id, legacy), usagePolicy(), 31, 0, 'analysis', now);
     expect(jobKey(id, c)).not.toBe(jobKey(id, legacy));
     expect(() => refuseActiveLegacyJob(state, id, c, now.getTime())).toThrow('cannot reset');

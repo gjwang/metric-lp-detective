@@ -721,3 +721,11 @@ findings; original financial verifier/version/fixtures are unchanged from main.
 This follow-up records the implementation hash. Branch push, current-head CI,
 normal merge and public deployment/acceptance must be observed separately; none
 is authority for the pending 33-attempt live proposal or evidence of a fifth LP.
+
+Final version review pins immutable provider-v1 rules/helper rather than the
+mutable dispatcher, so adding a future protocol route cannot invalidate an
+existing v1 proof. Source protocol version is separate from original financial
+accountingVersion. After regeneration, provider/worker regressions **17/17 PASS**
+and typecheck PASS. The cross-version test additionally matches the actual old
+failed-run job key, preventing a self-generated-key test from hiding a counter
+reset. This refinement changes no RPC allowance, account facts or live authority.
