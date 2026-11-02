@@ -173,8 +173,21 @@ prove policy separation and preserve all financial checks; they are NOT new
 contract-wallet chain evidence and never enter the published position registry.
 
 Recent discovery/accounting architecture is retained but no scan is launched.
-More than ten traces still requires a separately approved cumulative parent-job
-implementation/plan; no cap is raised or reset. PR #19 was independently read:
+The exact eleven-trace candidate has a durable proposal in
+`docs/STAGE_8_TRACE_PARENT_PLAN.json`: sixteen checkpoints, thirteen owned-state
+withdrawal checks, fourteen marks and two funding receipts. Phase A would acquire
+the first ten traces plus all financial/account evidence (93 expected, 98 hard);
+phase B on a separately named UTC day would revalidate the saved canonical
+boundaries and acquire the final trace (23 expected, 24 hard). Both phases share
+one source fingerprint, cumulative ledger and final reconciliation gate; phase A
+must never publish a sample. The proposed parent ceiling is 122 attempts over
+48 hours. **This exceeds the current 100-attempt/24-hour lifetime policy and is
+not implemented or authorised.** Daily 100-request/ten-trace caps would remain;
+phase-aware recovery, checksums and expiry must be implemented/tested, and all
+parent/day ceilings explicitly approved, before live acquisition. It is not an
+alternative implicit authorisation under the recommended 33-attempt pilot.
+
+No cap is raised or reset. PR #19 was independently read:
 its two narrow result-limit phrases preserve precedence, but no GitHub checks
 were returned for its head during this review, so it remains separate/unmerged.
 

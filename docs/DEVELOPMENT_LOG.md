@@ -729,3 +729,13 @@ accountingVersion. After regeneration, provider/worker regressions **17/17 PASS*
 and typecheck PASS. The cross-version test additionally matches the actual old
 failed-run job key, preventing a self-generated-key test from hiding a counter
 reset. This refinement changes no RPC allowance, account facts or live authority.
+
+`bb59a9b29d45f9b56585dfee4a3ca4d1afc2a094` passed both GitHub Validate runs
+41525688569/41525680820 and Vercel preview status. The eleven-trace indexed
+candidate now has an exact durable proposal: sixteen checkpoints, thirteen owned
+withdrawal checks, fourteen marks, two receipts; phase A expected 93/hard 98 and
+phase B expected 23/hard 24, one cumulative 122-attempt/48-hour parent. This is
+documentation only, requires implementation and explicit approval above existing
+lifetime policy, and does not change any running cap. Account type is UNKNOWN,
+no new RPC was performed, and the recommended small pilot stays 28/33, pending
+fresh approval. Current-head CI/main merge/production proof remain separate gates.
