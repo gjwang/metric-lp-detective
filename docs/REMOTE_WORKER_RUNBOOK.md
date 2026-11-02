@@ -225,10 +225,17 @@ tests and a copy-ID browser test do not count as that proof.
 
 ## Stage 7 bounded accounting capture and public acceptance
 
-See [STAGE_7.md](STAGE_7.md) for the pending exact new-wallet budget, UTC day,
-owner Run action and precise unapproved index experiments. The fifth position
-remains unverified until a real independently reconciled Actions result is
-published. The existing secret does not need reinstalling.
+See [STAGE_7.md](STAGE_7.md) for actual fifth-pilot run 41442682018: it stopped
+UNSUPPORTED after four requests, before position reconciliation. The one fresh
+run approval is consumed; do not rerun, resume, refund its 31-attempt reservation
+or change the secret. Separate index experiments remain unapproved.
+
+An empty optional LP_RPC_URL is normal in Actions. The checkpoint scanner must
+permit absence while scanning configured secrets. Future checkpoints durably
+save the actual request meter before the capture snapshot; a snapshot failure
+keeps usage recorded but does not create a resumable checkpoint. The historical
+failed run has only its original reservation and runner-log counts; never
+rewrite those as a recovered snapshot or zero actual usage.
 
 `owner-accounting.yml` captures a full-event, independently reconciled pool index
 candidate at an explicit target and attempt cap, sharing the existing state

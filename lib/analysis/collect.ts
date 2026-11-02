@@ -40,6 +40,7 @@ export async function collectPosition(id: string, slug: string, root: URL, rpc: 
   if (head?.hash !== h.acquisition.endHash) throw new Error('Pinned indexed head is no longer canonical');
   if (keccak256(await rpc('eth_getCode', [POOL, headTag]) as Hex) !== RUNTIME_CODE_HASH) throw new Error('Pool runtime changed');
   const ownerCode = await rpc('eth_getCode', [owner, '0x' + BigInt(r.events[0].block).toString(16)]);
+  if (typeof ownerCode !== 'string' || !/^0x(?:[0-9a-fA-F]{2})*$/.test(ownerCode)) throw new RpcFailure('invalid');
   if (ownerCode !== '0x') throw new AnalysisLimit('UNSUPPORTED', 'Contract-provider beneficial ownership requires separate proof');
   const batchAbi = h.abi.filter(e => e.type === 'function' && e.name === 'extsload' && e.inputs.length === 1 && e.inputs[0].type === 'bytes32[]');
   const slots: Hex[] = [], bins = Array.from({ length: 100 }, (_, i) => BigInt(i - 50));

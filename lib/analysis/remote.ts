@@ -9,7 +9,7 @@ import { jobKey, AnalysisLimit } from './store';
 import type { Rpc } from '../chain/rpc';
 import { checkedDiscoveryIndex, type DiscoveryIndex } from '../chain/discoveryIndex';
 import { checkedAccountingIndex, type AccountingIndex } from '../chain/accountingIndex';
-import { allocateUsage, checkedUsage, type UsageLedger, type UsagePolicy, type UsageAllocation } from './usageBudget';
+import { allocateUsage, checkedUsage, checkpointUsage, type UsageLedger, type UsagePolicy, type UsageAllocation } from './usageBudget';
 
 export const REPOSITORY = 'projectuwb/metric-lp-detective';
 export const STATE_BRANCH = 'codex/analysis-worker-state';
@@ -114,6 +114,22 @@ export async function saveState(api: GitHub, state: RemoteState, head: string | 
   return commit.sha as string;
 }
 
+// Attempt counters are useful even when a public-data snapshot cannot be saved.
+// Publish them first; never refund the allocation or pretend a snapshot exists.
+export async function saveRunCheckpoint(api: GitHub, state: RemoteState, head: string | null, runId: string, key: string, policy: UsagePolicy, usage: UsageAllocation | undefined, capture: () => Snapshot) {
+  if (!state.reservations.some(r => r.runId === runId && r.key === key)) throw new Error('Durable reservation missing; checkpoint refused');
+  let currentHead = head;
+  if (usage) {
+    if (usage.runId !== runId || !state.usage) throw new Error('Attempt meter belongs to another run or has no durable allocation');
+    state.usage = checkpointUsage(state.usage, policy, usage);
+    currentHead = await saveState(api, state, currentHead, 'Save RPC attempt counters before capture snapshot for owner run ' + runId);
+  }
+  const captured = capture();
+  if (captured.runId !== runId || captured.key !== key) throw new Error('Snapshot belongs to another admitted run');
+  state.snapshot = captured;
+  return saveState(api, state, currentHead, 'Save sanitized public-chain checkpoint for owner run ' + runId);
+}
+
 const allowed = /^(?:job\.json|capture\/(?:capture-context|config|states|marks|quotes|status|verification)\.json|capture\/receipts\/0x[a-f0-9]{64}\.json|capture\/traces\/0x[a-f0-9]{64}\.json\.gz|cache\/[a-f0-9]{64}\.json)$/;
 export function snapshot(folder: string, key: string, c: AnalysisContext, runId: string, expiresAt: string): Snapshot {
   const files: Record<string, string> = {};
@@ -136,7 +152,9 @@ export function snapshot(folder: string, key: string, c: AnalysisContext, runId:
 export function rejectSecrets(text: string) {
   const secrets = Object.entries(process.env).filter(([name, value]) => value && value.length >= 12 && /(?:TOKEN|SECRET|PASSWORD|RPC_URL|API_KEY)$/.test(name)).map(([, value]) => value!);
   for (const name of ['BNB_RPC_URL', 'LP_RPC_URL']) {
-    try { const u = new URL(process.env[name] ?? 'https://example.invalid'); secrets.push(...[...u.searchParams.values(), ...u.pathname.split('/'), u.username, u.password].filter(v => v.length >= 8)); } catch { throw new Error('Invalid RPC configuration (redacted)'); }
+    // Actions exposes an unset optional secret as ''. It is absent, not an
+    // invalid configured endpoint. Nonempty malformed URLs still fail closed.
+    try { const u = new URL(process.env[name] || 'https://example.invalid'); secrets.push(...[...u.searchParams.values(), ...u.pathname.split('/'), u.username, u.password].filter(v => v.length >= 8)); } catch { throw new Error('Invalid RPC configuration (redacted)'); }
   }
   if (secrets.some(s => text.includes(s)) || /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b|-----BEGIN (?:\w+ )?PRIVATE KEY-----/.test(text)) throw new Error('Credential scan rejected checkpoint (matching data redacted)');
 }

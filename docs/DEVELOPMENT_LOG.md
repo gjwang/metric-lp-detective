@@ -574,3 +574,59 @@ was pending. Integration is permitted only after the current head checks pass.
 The four financial-engine/evidence paths are unchanged from main. Exact staged
 credential scan passed for all 24 changed files. This receipt does not claim a
 merge, deployment, fifth independent proof or approved live budget.
+
+### Stage 7 fifth live pilot — actual failure and checkpoint fix
+
+Continued from latest main `1168aba3e1f0f8badd2b3a871e0a6ed1877b9800` in the
+existing running cloud, without rebuilding it or repeating earlier work.
+Independent UTC clock: 2 November 2026; inside the owner-approved day/window.
+The owner had already dispatched
+[run 41442682018](https://github.com/projectuwb/metric-lp-detective/actions/runs/41442682018)
+at 12:11:38 UTC / 11:11 p.m. Sydney. It used main, exact approved provider/salt,
+resume false, Free/$0 and a durably confirmed 31-attempt reservation. Its key
+matches the independently computed source-bound job key.
+
+Actual runner: **UNSUPPORTED, 4 transport attempts, 0/5 checkpoints**. Source
+control flow and terminal log establish chain identity (1), pinned header (1),
+pool/provider code (2); no state/removal calls, receipts, traces or marks. The
+provider-code response unequal to 0x triggered the existing ownership guard.
+Raw code is not retained remotely; contract implementation/delegation/beneficial
+ownership remain unproved, and a malformed/null response cannot be excluded.
+The fix validates hexadecimal bytecode before applying the ownership guard;
+malformed data now fails as invalid RPC rather than misclassifying an account. No fifth reconciliation/PnL/replay exists; no swap or
+quote is invented. No additional RPC was sent by Codex and no rerun/resume,
+index scan, payment, secret change or reservation refund was attempted.
+
+The snapshot command failed too. Actual Actions logs show LP_RPC_URL empty;
+rejectSecrets used nullish fallback, then new URL('') rejected that absent
+optional variable, including in the error-redaction path. Reproduced offline;
+fix treats empty optional secret as absent, while still rejecting malformed
+configured URLs and detecting full credentials/URL credential components.
+Checkpoint handling now saves the real transport meter durably before snapshot
+creation. Regression verifies a rejected snapshot retains all counters and the
+full allocation without manufacturing a resumable capture. A separate synthetic
+provider-code regression preserves the four-read ownership refusal and verifies
+that no replay is promoted. It is NOT substitute blockchain evidence.
+
+Observed state-branch commit `094d0c5ba162b2f55ac45344770b0589f7b60980` retains
+31 reserved attempts, zero cost, allocation attempts 0/checkpointed false and an
+old other-position snapshot. Initial zero is NOT actual usage; runner logs say
+four. The old snapshot is never reused, counters are never reconstructed as a
+fake transport meter, and the missing latest checkpoint remains non-resumable.
+Actual failure evidence lives in fixtures/research/stage7-fifth-pilot-failure.json,
+separate from verified-position fixtures; the public acceptance config records
+the consumed one-run authority. docs/STAGE_7.md and the runbook reflect the
+actual stopped result and separately unapproved expansion paths.
+
+Targeted remote/usage regressions: 22/22 PASS; typecheck PASS. Full validation
+and Git receipt follow. Stage 7 remains NOT COMPLETE. No further owner Run
+workflow action is requested under the consumed approval.
+
+Validation milestone: full npm run check PASS, **131 tests / 20 suites**, types,
+A–D fixtures, all stored history/oracle/performance/outcome/Python Fraction checks,
+and credential scan. Added final malformed-provider response regression next;
+worker/remote targeted suite **14/14 PASS** (132 total tests now), typecheck PASS.
+Production build PASS; client credential scan PASS (11 assets); installed system
+Chromium production-build browser tests **22/22 PASS**. All original financial
+engine/proof files remain unchanged. No further live RPC or state-branch writes.
+Exact staged scan and GitHub validation precede integration of this fix/report.
