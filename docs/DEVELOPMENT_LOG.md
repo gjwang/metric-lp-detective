@@ -645,3 +645,29 @@ are CPU-heavy; test files now run serially to avoid contention on shared
 runners. All assertions, unhandled-error checks and timeouts remain enabled.
 Final serialized local suite: **132/132 PASS, 20 suites**, typecheck PASS. No
 blockchain RPC, active quotas, financial calculations or proof gates changed.
+
+## Range classification compatibility for two result-limit phrases (base 292222f)
+
+`classify` in `lib/chain/rpc.ts` now maps the phrases `query exceeds max results`
+and `response is too big` to `range`, including under code -32602, so
+`liquidityPage` can halve the page as the existing range contract intends
+(Refs #16). Rate/429, denied and revert checks still run first; other -32602
+messages stay `invalid`; no retry, budget, provider, endpoint, cursor or
+single-block saturation logic changed.
+
+Evidence: tests in `tests/rpc.test.ts` use stubbed `fetch` with artificial
+JSON-RPC errors through `configuredRpc` and `liquidityPage`. They are synthetic
+compatibility checks of two upstream message contracts, not SolidRPC output and
+not chain-history evidence. Focused run before the source change: 3 new tests
+FAIL (exit 1). After: `tests/rpc.test.ts` 17/17 PASS; `tests/rpc.test.ts` +
+`tests/discovery.test.ts` 35/35 PASS (after offline `prepare:web`); `npm run
+typecheck` PASS. These were the implementation-stage checks; live behavior
+is NOT VERIFIED.
+
+Leader follow-through: complete `npm run check` PASS (exit 0, 135/135
+tests in 20 suites, 129.18 seconds), including typecheck, the existing saved
+fixture/history/oracle/performance/outcome/accounting checks and credential
+scan (267 project files, zero findings). Existing PARTIAL oracle and
+NOT_CAPTURED accounting statuses remain unchanged. No live RPC, credentials,
+workflow dispatch, quota use or deployment. Independent source/test review
+APPROVE; this paragraph only records the subsequent deterministic checks.
