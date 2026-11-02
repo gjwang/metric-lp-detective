@@ -5,7 +5,9 @@ import { historyInputs, key } from './reconstruct-history.js';
 import { verifyHistory } from './verify-history.js';
 import { verifyOracle } from './verify-oracle.js';
 import { verifiedPerformance } from './verify-performance.js';
-import { verifyPosition } from './verify-position.js';
+import { verifyReplayPosition as verifyPosition } from './verify-replay-position.js';
+import { providerVerificationVersion } from '../lib/analysis/providerVersion';
+import type { ProviderIdentity } from '../lib/domain/providerIdentity';
 import { positionReplay } from '../lib/metric/positionReplay.js';
 import { createReplayBundle } from '../lib/analysis/bundle.js';
 import { accountingVersion } from '../lib/analysis/version.js';
@@ -40,10 +42,11 @@ const discoveryLogs = [...h.logs, ...(discovery?.pages.flatMap(p => p.logs) ?? [
 const positions = liquidityPositions(discoveryLogs, enabled);
 const pageSize = 128;
 const registry: { id: string; directory: string; label: string }[] = [];
-function publish(id: string, directory: string, label: string, r: ReturnType<typeof positionReplay>, marks: BlockMark[], sourceHashes: Record<string, string>) {
+function publish(id: string, directory: string, label: string, r: ReturnType<typeof positionReplay>, marks: BlockMark[], sourceHashes: Record<string, string>, identity: ProviderIdentity | null = null) {
   if (directory) mkdirSync(new URL(directory + '/', destination), { recursive: true });
   const prefix = directory ? directory + '/' : '';
   const { metadata, pages } = createReplayBundle(id, label, r, marks, sourceHashes, h.acquisition.from, h.acquisition.to, positions.length);
+  if (identity) metadata.providerIdentity = identity;
   for (const [i, page] of pages.entries()) save(prefix + 'events-' + i + '.json', page);
   save(prefix + 'metadata.json', metadata); registry.push({ id, directory, label });
   console.log(JSON.stringify({ position: label, events: metadata.eventCount, pages: pages.length, executionQuotes: metadata.executionQuotes, closed: metadata.closed }));
@@ -52,18 +55,22 @@ const originalMarks = JSON.parse(readFileSync(new URL('../fixtures/history/valua
 const sourceHashes = Object.fromEntries(['position-history.json', 'historical-state.json', 'valuation-inputs.json'].map(f => [f, createHash('sha256').update(readFileSync(new URL('../fixtures/history/' + f, import.meta.url))).digest('hex')]));
 publish(key, '', 'Original sample · 26,202 swaps', original, originalMarks, sourceHashes);
 const smallMarks = small.marks.filter((m: any) => m.result).map((m: any) => ({ block: m.block, blockHash: m.blockHash, timestamp: m.timestamp, referenceX64: m.referenceX64, kind: 'BLOCK_END' }));
-publish(small.config.id, small.config.slug, 'Smaller sample · 9 swaps · closed', small.replay, smallMarks, { poolIndex: small.config.sourceHash, checkpointEvidence: createHash('sha256').update(readFileSync(new URL('../fixtures/positions/' + small.config.slug + '/states.json', import.meta.url))).digest('hex') });
+publish(small.config.id, small.config.slug, 'Smaller sample · 9 swaps · closed', small.replay, smallMarks, { poolIndex: small.config.sourceHash, checkpointEvidence: createHash('sha256').update(readFileSync(new URL('../fixtures/positions/' + small.config.slug + '/states.json', import.meta.url))).digest('hex') }, small.providerIdentity);
 for (const v of additional) {
   const marks = v.marks.filter((m: any) => m.result).map((m: any) => ({ block: m.block, blockHash: m.blockHash, timestamp: m.timestamp, referenceX64: m.referenceX64, kind: 'BLOCK_END' as const }));
-  publish(v.config.id, v.config.slug, 'Verified owner-requested position · ' + v.verification.swaps + ' swaps', v.replay, marks, { poolIndex: v.config.sourceHash, checkpointEvidence: createHash('sha256').update(readFileSync(new URL('../fixtures/positions/' + v.config.slug + '/states.json', import.meta.url))).digest('hex') });
+  publish(v.config.id, v.config.slug, 'Verified owner-requested position · ' + v.verification.swaps + ' swaps', v.replay, marks, { poolIndex: v.config.sourceHash, checkpointEvidence: createHash('sha256').update(readFileSync(new URL('../fixtures/positions/' + v.config.slug + '/states.json', import.meta.url))).digest('hex') }, v.providerIdentity);
 }
 save('positions.json', positions); save('registry.json', registry);
+// Explicit owner-run research only; no wallet searches or fabricated live queue.
+const failedPilot = JSON.parse(readFileSync('fixtures/research/stage7-fifth-pilot-failure.json', 'utf8'));
+if (failedPilot.status !== 'STOPPED_BEFORE_POSITION_RECONCILIATION' || failedPilot.runUrl !== 'https://github.com/projectuwb/metric-lp-detective/actions/runs/' + failedPilot.runId || !/^\d+$/.test(failedPilot.runId) || failedPilot.durableLedger.checkpointed !== false) throw new Error('Invalid saved owner-run failure receipt');
+save('owner-run-history.json', [{ id: failedPilot.positionId, runUrl: failedPilot.runUrl, loggedAttempts: failedPilot.observed.runnerLoggedAttempts, state: 'STOPPED_BEFORE_RECONCILIATION', accountType: 'ACCOUNT_TYPE_UNCONFIRMED', checkpointed: false }]);
 let releaseCommit = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? '';
 if (!/^[a-f0-9]{40}$/.test(releaseCommit)) { try { execFileSync('git', ['diff', '--quiet', 'HEAD']); if (execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { encoding: 'utf8' }).trim()) throw new Error('Untracked source'); releaseCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { releaseCommit = ''; } }
 save('release.json', { schema: 1, commit: /^[a-f0-9]{40}$/.test(releaseCommit) ? releaseCommit : null, playable: registry.map(r => r.id), chainId: 56, pool: h.logs[0].address, replayThrough: h.acquisition.to });
 save('manifest.json', { schema: 2, selectedPosition: key, playable: registry.map(r => r.id), eventCount: original.events.length, pageSize, inventoryVerified: true, adjustmentEvents: original.events.filter(e => e.type === 'rounding').length });
 
-save('context.json', { chainId: 56, pool: h.logs[0].address, indexEnd: h.acquisition.to, indexEndHash: h.acquisition.endHash, sourceHash: small.config.sourceHash, accountingVersion: accountingVersion() });
+save('context.json', { chainId: 56, pool: h.logs[0].address, indexEnd: h.acquisition.to, indexEndHash: h.acquisition.endHash, sourceHash: small.config.sourceHash, accountingVersion: accountingVersion(), providerVerificationVersion: providerVerificationVersion() });
 const discoveryEnd = discovery?.pages.at(-1)?.through ?? h.acquisition.to;
 const probe = JSON.parse(readFileSync(new URL('../fixtures/rpc/solidrpc-free-probe.json', import.meta.url), 'utf8'));
 const observedHead = probe.results.find((r: any) => r.name === 'finalised chain head' && r.status === 'PASS')?.result;

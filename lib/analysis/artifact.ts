@@ -3,15 +3,17 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { createReplayBundle } from './bundle';
 import { atomicJson, context, getJob, jobFolder, jobs, ownerLocal, readJson, updateJob } from './store';
-import type { verifyPosition } from '../../scripts/verify-position';
+import type { verifyReplayPosition as verifyPosition } from '../../scripts/verify-replay-position';
 import type { ReplayMeta, ReplayEvent } from '../domain/web';
 const digest = (value: Uint8Array) => createHash('sha256').update(value).digest('hex');
 export function promote(key: string, verified: ReturnType<typeof verifyPosition>) {
   const job = getJob(key); if (!job || job.cancelled) throw new Error('Job cancelled or absent');
+  if (job.context.providerVerificationVersion && (verified.config.schema !== 2 || !verified.providerIdentity || verified.config.providerVerificationVersion !== job.context.providerVerificationVersion)) throw new Error('Fresh provider proof protocol/identity mismatch');
   if (verified.config.id !== job.id || verified.config.indexEndHash !== job.context.indexEndHash || verified.config.sourceHash !== job.context.sourceHash) throw new Error('Verified artifact/job identity mismatch');
   const folder = jobFolder(key), pending = path.join(folder, 'pending-replay'), target = path.join(folder, 'replay');
   const marks = verified.marks.filter((m: any) => m.result).map((m: any) => ({ block: m.block, blockHash: m.blockHash, timestamp: m.timestamp, referenceX64: m.referenceX64, kind: 'BLOCK_END' as const }));
   const { metadata, pages } = createReplayBundle(job.id, 'Owner-verified position · ' + verified.verification.swaps + ' swaps', verified.replay, marks, { poolIndex: job.context.sourceHash, jobKey: key }, '126502643', job.context.indexEnd, 236);
+  if (verified.providerIdentity) metadata.providerIdentity = verified.providerIdentity;
   if (existsSync(target)) {
     // Recover a crash between atomic bundle rename and status promotion, without overwriting.
     const manifest = readJson(path.join(target, 'integrity.json'));
@@ -33,7 +35,7 @@ export function promote(key: string, verified: ReturnType<typeof verifyPosition>
 export function runtimeJobs() {
   if (!ownerLocal()) return [];
   const c = context();
-  return jobs().filter(j => j.status === 'VERIFIED' && !j.cancelled && j.context.accountingVersion === c.accountingVersion && j.context.indexEndHash === c.indexEndHash && j.context.sourceHash === c.sourceHash);
+  return jobs().filter(j => j.status === 'VERIFIED' && !j.cancelled && j.context.accountingVersion === c.accountingVersion && (!j.context.providerVerificationVersion || j.context.providerVerificationVersion === c.providerVerificationVersion) && j.context.indexEndHash === c.indexEndHash && j.context.sourceHash === c.sourceHash);
 }
 function verifiedJob(id: string) { return runtimeJobs().find(j => j.id === id) ?? null; }
 function readChecked<T>(key: string, file: string): T {

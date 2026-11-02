@@ -8,6 +8,7 @@ import { context, submit, getJob, retryJob, jobFolder, updateJob } from '../lib/
 import { runtimeMeta, runtimePage } from '../lib/analysis/artifact';
 import { RpcFailure, type Rpc } from '../lib/chain/rpc';
 import { SMALL_SAMPLE_ID } from '../lib/domain/samples';
+import { historyInputs } from '../scripts/reconstruct-history';
 import { snapshot, restoreSnapshot } from '../lib/analysis/remote';
 let folder: string | undefined;
 afterEach(() => { vi.unstubAllEnvs(); if (folder) rmSync(folder, { recursive: true, force: true }); });
@@ -27,7 +28,7 @@ it('real saved evidence: failed request, bounded retry, independent promotion, i
   const fixtureRpc: Rpc = async (method, params) => {
     if (method === 'eth_chainId') return '0x38';
     if (method === 'eth_getCode') return params[0] === SMALL_SAMPLE_ID.split(':')[0] ? '0x' : JSON.parse(readFileSync('fixtures/raw/code-and-identity.json', 'utf8')).runtimeCode;
-    if (method === 'eth_getBlockByNumber') { const s = states.find((s: any) => BigInt(s.block) === BigInt(params[0] as string)); return { hash: s.blockHash, timestamp: s.timestamp }; }
+    if (method === 'eth_getBlockByNumber') { const s = states.find((s: any) => BigInt(s.block) === BigInt(params[0] as string)); return { number: params[0], hash: s.blockHash, timestamp: s.timestamp }; }
     if (method === 'eth_getTransactionReceipt') return JSON.parse(readFileSync(root + 'receipts/' + params[0] + '.json', 'utf8'));
     if (method === 'debug_traceTransaction') return JSON.parse(gunzipSync(readFileSync(root + 'traces/' + params[0] + '.json.gz')).toString());
     if (method === 'eth_call') {
@@ -58,6 +59,7 @@ it('real saved evidence: failed request, bounded retry, independent promotion, i
   expect(finished.attempts).toBe(3);
   expect(finished.verification).toMatchObject({ storageComparisons: 6000, withdrawalChecks: 12, tolerance: '0' });
   expect(runtimeMeta(job.id)?.final).toEqual(['0', '0']); expect(runtimePage(job.id, 0)).toHaveLength(14);
+  expect(runtimeMeta(job.id)?.providerIdentity).toMatchObject({ mode: 'DIRECT_PROVIDER_ACCOUNT', scope: 'PROVIDER_POSITION_ONLY', beneficialOwner: 'UNKNOWN', currentAccountType: 'NOT_CHECKED' });
   const issued = finished.requests;
   // Model a crash after rename but before promotion: recover from independently checked raw evidence.
   updateJob(job.key, { status: 'RUNNING', attempts: 1 });
@@ -67,22 +69,22 @@ it('real saved evidence: failed request, bounded retry, independent promotion, i
   expect(() => runtimePage(job.id, 0)).toThrow('checksum');
 }, 90000);
 it.each([
-  { name: 'contract code', code: '0x6000', status: 'UNSUPPORTED', error: 'Contract-provider beneficial ownership requires separate proof' },
-  { name: 'invalid response', code: null, status: 'FAILED', error: 'RPC invalid' },
-])('stops a provider with $name after the four eligibility reads, with no invented position proof', async ({ code, status, error }) => {
+  { name: 'valid contract code but missing financial proof', code: '0x6000', status: 'FAILED', attempts: 8, error: 'Independent capture/verification failed; replay remains locked. Owner review is required.' },
+  { name: 'invalid account response', code: null, status: 'UNSUPPORTED', attempts: 6, error: 'ACCOUNT_TYPE_UNCONFIRMED: historical code response is invalid or outside safe limits' },
+])('keeps $name unplayable without complete financial reconciliation', async ({ code, status, attempts, error }) => {
   // Synthetic nonempty bytecode is an eligibility vector, NOT the failed
   // pilot's raw provider code (which was not retained by that runner).
   folder = mkdtempSync(path.join(os.tmpdir(), 'metric-code-provider-')); vi.stubEnv('LP_ANALYSIS_DIR', folder); vi.stubEnv('LP_ANALYSIS_MODE', 'owner-local'); vi.stubEnv('VERCEL', '');
   const id = '0xa598e2658ef74196f498b00b289a7d5d64a42cd7:615031639178913965778603', c = context(), job = submit(id, c).job;
-  const calls: string[] = [];
+  const calls: string[] = [], h = historyInputs();
   await processJob(job, async (method, params) => {
     calls.push(method);
     if (method === 'eth_chainId') return '0x38';
-    if (method === 'eth_getBlockByNumber') return { hash: c.indexEndHash };
+    if (method === 'eth_getBlockByNumber') { const head = params[0] === '0x' + BigInt(c.indexEnd).toString(16), log = h.logs.find(l => BigInt(l.blockNumber) === BigInt(params[0] as string)); return { number: params[0], hash: head ? c.indexEndHash : log?.blockHash ?? '0x' + '11'.repeat(32), timestamp: '0x1' }; }
     if (method === 'eth_getCode') return params[0] === id.split(':')[0] ? code : JSON.parse(readFileSync('fixtures/raw/code-and-identity.json', 'utf8')).runtimeCode;
     throw new Error('No historical inventory/receipt/trace read is permitted after eligibility refusal');
   }, async () => {});
-  expect(calls).toEqual(['eth_chainId', 'eth_getBlockByNumber', 'eth_getCode', 'eth_getCode']);
-  expect(getJob(job.key)).toMatchObject({ status, requests: 4, completedCheckpoints: 0, error });
+  expect(calls.slice(0, 6)).toEqual(['eth_chainId', 'eth_getBlockByNumber', 'eth_getCode', 'eth_getBlockByNumber', 'eth_getCode', 'eth_getBlockByNumber']);
+  expect(getJob(job.key)).toMatchObject({ status, requests: attempts, completedCheckpoints: 0, error });
   expect(runtimeMeta(id)).toBeNull();
 }, 60000);

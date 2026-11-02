@@ -28,3 +28,5 @@
 .discovery-coverage p { color: #5c6273; font-size: 12px; line-height: 1.7; margin: 8px 0; overflow-wrap: anywhere; }
 .discovery-coverage a, .discovery-coverage code { overflow-wrap: anywhere; }
 .holding-comparison { margin-top: 16px; }
+
+.provider-scope code { overflow-wrap: anywhere; word-break: break-all; white-space: normal; }

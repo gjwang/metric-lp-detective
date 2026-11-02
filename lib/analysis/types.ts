@@ -1,4 +1,4 @@
-export interface AnalysisContext { chainId: 56; pool: string; indexEnd: string; indexEndHash: string; sourceHash: string; accountingVersion: string }
+export interface AnalysisContext { chainId: 56; pool: string; indexEnd: string; indexEndHash: string; sourceHash: string; accountingVersion: string; providerVerificationVersion?: string }
 export type AnalysisState = 'QUEUED' | 'RUNNING' | 'VERIFIED' | 'PARTIAL' | 'UNSUPPORTED' | 'FAILED' | 'RATE_LIMITED';
 export interface AnalysisJob {
   key: string; id: string; slug: string; context: AnalysisContext; status: AnalysisState; phase: string;

@@ -9,7 +9,7 @@ import { POOL, RUNTIME_CODE_HASH } from '../lib/chain/poolConfig.js';
 import { PROVIDER, executionQuotes } from '../lib/metric/oracleTrace.js';
 import { signedPair } from '../lib/chain/decode.js';
 import { positionIdentity } from '../lib/domain/position.js';
-import { verifyPosition } from './verify-position.js';
+import { verifyReplayPosition as verifyPosition } from './verify-replay-position.js';
 const input = process.argv[process.argv.indexOf('--id') + 1];
 if (!process.argv.includes('--id') || !/^0x[0-9a-fA-F]{40}:\d{1,25}$/.test(input ?? '')) throw new Error('Use --id publicProvider:uint80Salt');
 const id = positionIdentity(input), [owner, salt] = id.split(':');

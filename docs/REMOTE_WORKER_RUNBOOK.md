@@ -248,3 +248,18 @@ checks the exact deployed commit and the unfamiliar wallet through the existing
 public UI. Its actual `PUBLIC_BROWSER_PROOF` distinguishes a working owner
 handoff from a verified playable result. A local browser PASS is separate from
 this public deployment receipt.
+
+## Stage 8 provider-level proof protocol
+
+Read [STAGE_8.md](STAGE_8.md) for the source audit and the pending exact one-run
+proposal. Valid contract/delegated providers are no longer rejected solely for
+having code: the new protocol records canonical historical account evidence and
+independently reconciles the exact provider/salt. Beneficial ownership remains
+UNKNOWN. Invalid code, reorg, missing withdrawal/receipt/mark or any financial
+mismatch keeps replay locked. Legacy proof validation remains unchanged.
+
+Fresh provider jobs add two code-boundary headers: the recommended zero-swap
+position expects 28 calls and reserves at most 33, not the old pilot's 26/31.
+The old failed 31 remains reserved and its missing checkpoint cannot be resumed.
+A fresh protocol version refuses an unexpired legacy job for the same position.
+No Stage 8 live acquisition is authorised by a code merge or this runbook.

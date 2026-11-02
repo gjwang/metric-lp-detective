@@ -645,3 +645,72 @@ are CPU-heavy; test files now run serially to avoid contention on shared
 runners. All assertions, unhandled-error checks and timeouts remain enabled.
 Final serialized local suite: **132/132 PASS, 20 suites**, typecheck PASS. No
 blockchain RPC, active quotas, financial calculations or proof gates changed.
+
+### Stage 8 — canonical provider-level identity, offline pilot preparation
+
+Started from latest fetched main `292222f929cf4cdac5efa8346d77287f7915d3a3`
+on `codex/stage8-provider-replay`. Read the pasted owner request, full Issue #20,
+AGENTS, prior Stage 7 actual failure/receipt, source audit and collector/verifier.
+Existing cloud remains running; no rebuild, new credentials or infrastructure.
+No live RPC, code probe, reconstruction dispatch, index scan, payment or old
+reservation refund/reset was performed. State branch still retains the failed
+31-attempt Nov 2 allocation, actual four logged reads vs uncheckpointed initial
+zero; the new work does not manufacture a missing meter/snapshot.
+
+Source audit of pinned MetricOmmPool/LiquidityLib establishes provider/salt/bin
+shares and removal caller equality/token payment to provider, with no EOA-only
+entry-point requirement. The old blanket code guard conflated that entitlement
+with beneficial ownership. Introduced explicit provider-level schema 2: bounded,
+compressed historical code, canonical pre/post deposit-block headers, hash/length
+and delegation marker, beneficial owner UNKNOWN and current type NOT CHECKED.
+Unknown/null/malformed/oversized data and reorgs remain stopped. No unretained
+old response is relabelled as contract or EOA evidence.
+
+Preserved scripts/verify-position.ts, accountingVersion, monetary engine, source
+ABI and all original proof directories unchanged. New versioned verifier retains
+legacy monetary/receipt/trace assertions and adds complete checkpoint/mark sets,
+mandatory owned-checkpoint withdrawal execution, gross funding and provider
+recipient receipt checks, canonical account evidence and false-owner-claim
+rejection. Fresh jobs cannot use a legacy proof. Active legacy jobs are checked
+across the new namespace so version changes cannot reset their counters. The
+100-attempt lifetime/day, ten-trace and twenty-checkpoint caps are unchanged.
+Canonical code adds two headers, correctly included in fresh admission ceilings.
+
+Website explains provider-level scope, callback-payer/control limitations and
+unknown current code. Schema-2 replays get a scoped identity banner and provider
+cashflow wording, while existing four retain unchanged numeric data/labels.
+The old failed wallet links its real historical four-read receipt without fake
+queue/progress. Public acceptance requires actual provider identity for the new
+pilot; no config flag registers a new position. The proposed new provider is
+0x5f2d...b190:1044581382818305908510560: isolated indexed add at 129094689 and
+removal at 129094959, zero attributable swaps, five checkpoints/zero traces.
+Account type remains UNKNOWN until the approved canonical read. Expected 28,
+hard 33 Free attempts / $0, proposed Nov 3 UTC (11 a.m. Sydney onwards), fresh
+run only. Original a598 position is an alternative only after old job expiry and
+new separate approval, not a retry/fallback under consumed authority.
+
+Validation: full npm run check PASS — **147 tests / 21 suites**, types, all
+stored A–D/history/oracle/performance/outcome/accounting checks and independent
+Python Fraction checks (35 selected events / 350 exact lifecycle comparisons).
+Provider tests use real saved financial data and actual saved runtime bytes
+with explicitly synthetic account-code overlays; no new chain proof/sample is
+published. Null/type/size, code history, marker, reorg/rate, false-owner, missing
+withdrawal/mark, no-legacy-fallback, consumed-ledger and failure-only registry
+cases pass. Production build PASS; client credential scan PASS (11 assets);
+installed Chromium production-build browser suite **24/24 PASS**, including
+scope/history/mobile and existing replay regressions. Pinned source/runtime,
+library/link/guard verification PASS, exact compiler/core checkout unchanged.
+Final metadata assertion/CLI types and staged credential/Git checks follow.
+
+PR #19 reviewed independently: narrow two-phrase range classifier/tests preserve
+rate/denied/revert precedence. No check runs were returned for its head during
+review; it remains separate/unmerged and is not counted in Stage 8 results.
+Source-index coverage remains 126502643–130841348; current-head discovery and
+full-accounting catch-up are not run. A fifth playable provider is NOT VERIFIED.
+
+Final targeted worker metadata assertion PASS (three worker regressions), final
+typecheck PASS; the new runtime bundle includes only verified provider-level
+identity, never raw code/controller claims. Workflow YAML parsing and diff
+checks PASS. Cloud status briefly advertised starting in the UI but authoritative
+current runtime status remained running/connected; workspace and validation
+outputs are retained. No environment rebuild or extra live RPC occurred.

@@ -1,7 +1,7 @@
 import { capabilities, localAccess, boundedJson } from '../../../lib/server/analysis';
 import { context, submit, getJob, jobKey, AnalysisLimit } from '../../../lib/analysis/store';
 import { positionIdentity } from '../../../lib/domain/position';
-import { getPositions } from '../../../lib/server/replay';
+import { getPositions, getOwnerRunHistory, getMeta } from '../../../lib/server/replay';
 import { limited } from '../../../lib/server/limit';
 export const runtime = 'nodejs';
 const headers = { 'Cache-Control': 'no-store' };
@@ -11,7 +11,10 @@ export async function GET(request: Request) {
     const job = info.queueAvailable && id ? getJob(jobKey(positionIdentity(id), context())) : null;
     const position = id ? getPositions().find(p => p.id === id) : null;
     const eligibility = !position ? 'NO_INDEXED_POSITION' : position.status === 'reconciled' ? 'VERIFIED_REPLAY' : BigInt(position.lastBlock) > BigInt(info.context.indexEnd) ? 'ACCOUNTING_INDEX_REQUIRED' : 'OWNER_PREFLIGHT_REQUIRED';
-    return Response.json({ ...info, job, eligibility, position }, { headers });
+    const identity = position?.status === 'reconciled' ? getMeta(position.id).providerIdentity : null;
+    return Response.json({ ...info, job, eligibility, position,
+      providerAnalysis: { scope: 'PROVIDER_POSITION_ONLY', beneficialOwner: 'UNKNOWN', accountType: identity?.mode ?? 'ACCOUNT_TYPE_UNCONFIRMED', validContractProvidersSupported: true, codeObservationRequired: true },
+      previousRun: id ? getOwnerRunHistory().find(r => r.id === id) ?? null : null }, { headers });
   } catch { return Response.json({ error: 'Analysis status is unavailable. Retry shortly.' }, { status: 503, headers }); }
 }
 export async function POST(request: Request) {
@@ -19,6 +22,7 @@ export async function POST(request: Request) {
   if (limited(request, 'analysis-submit', 6)) return Response.json({ accepted: false, error: 'Too many analysis requests. Retry in a minute.' }, { status: 429, headers });
   try {
     const body = await boundedJson(request), id = positionIdentity(body?.positionId ?? '');
+    if (body.beneficialOwner !== undefined || body.controller !== undefined || body.analyticsScope !== undefined && body.analyticsScope !== 'PROVIDER_POSITION_ONLY') throw new Error('Only provider-level attribution is supported');
     const position = getPositions().find(p => p.id === id);
     if (!position) return Response.json({ accepted: false, error: 'No provider/salt in this fixed index; no job created.' }, { status: 404, headers });
     if (position.status === 'reconciled') return Response.json({ accepted: false, replayAvailable: true, status: 'VERIFIED', id, message: 'Verified replay already exists; no additional job or RPC requests created.' }, { headers });

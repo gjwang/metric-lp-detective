@@ -15,7 +15,7 @@ export function atomicJson(file: string, value: unknown) {
   renameSync(temporary, file);
 }
 export function context(): AnalysisContext { return readJson(path.join(process.cwd(), '.web-data/context.json')); }
-export function jobKey(id: string, c: AnalysisContext) { return createHash('sha256').update(JSON.stringify([1, c.chainId, c.pool.toLowerCase(), positionIdentity(id), c.indexEndHash, c.sourceHash, c.accountingVersion])).digest('hex'); }
+export function jobKey(id: string, c: AnalysisContext) { return createHash('sha256').update(JSON.stringify([c.providerVerificationVersion ? 2 : 1, c.chainId, c.pool.toLowerCase(), positionIdentity(id), c.indexEndHash, c.sourceHash, c.accountingVersion, ...(c.providerVerificationVersion ? [c.providerVerificationVersion] : [])])).digest('hex'); }
 export function jobFolder(key: string) { if (!/^[a-f0-9]{64}$/.test(key)) throw new Error('Invalid job identifier'); return path.join(storeRoot(), 'jobs', key); }
 const fileFor = (key: string) => path.join(jobFolder(key), 'job.json');
 export function getJob(key: string): AnalysisJob | null {
@@ -46,7 +46,7 @@ function daily() {
   const old = existsSync(file) ? readJson(file) : null;
   return old?.day === day ? old as { day: string; issued: number; jobs: number } : { day, issued: 0, jobs: 0 };
 }
-export class AnalysisLimit extends Error { constructor(public state: 'RATE_LIMITED' | 'UNSUPPORTED' | 'FAILED', message: string) { super(message); } }
+export class AnalysisLimit extends Error { constructor(public state: 'RATE_LIMITED' | 'UNSUPPORTED' | 'FAILED', message: string, public method?: string) { super(message); } }
 export function submit(id: string, c = context()) {
   id = positionIdentity(id); const key = jobKey(id, c);
   return locked(() => {
