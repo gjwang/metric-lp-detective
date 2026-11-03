@@ -2,10 +2,10 @@ import { cpSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { atomicJson, getJob, jobFolder } from '../lib/analysis/store.js';
-import { verifyPosition } from './verify-position.js';
+import { verifyReplayPosition as verifyPosition } from './verify-replay-position.js';
 export function exportVerifiedJob(key: string, mode: 'OWNER_LOCAL_DURABLE' | 'GITHUB_ACTIONS_OWNER' = 'OWNER_LOCAL_DURABLE') {
 const job = getJob(key); if (!job || job.status !== 'VERIFIED') throw new Error('Only an independently verified, unexpired job can be published');
-const source = path.join(jobFolder(key), 'capture'); verifyPosition(job.slug, pathToFileURL(source + '/'));
+const source = path.join(jobFolder(key), 'capture'); verifyPosition(job.slug, pathToFileURL(source + '/'), job.context.providerVerificationVersion);
 const destination = path.join('fixtures/positions', job.slug);
 if (existsSync(destination)) { const old = verifyPosition(job.slug); if (old.config.id !== job.id || old.config.indexEndHash !== job.context.indexEndHash || old.config.sourceHash !== job.context.sourceHash) throw new Error('Existing immutable evidence has different identity/coverage; a versioned migration is required'); }
 else cpSync(source, destination, { recursive: true, errorOnExist: true });

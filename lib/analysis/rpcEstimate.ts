@@ -1,7 +1,8 @@
 // Offline resource arithmetic only. Estimates do not authorise a run or a payment.
-export function reconstructionCalls(checkpoints: number, withdrawals: number, marks: number, fundingReceipts: number, traceTransactions: number) {
+export function reconstructionCalls(checkpoints: number, withdrawals: number, marks: number, fundingReceipts: number, traceTransactions: number, diagnosticHeaders = 0) {
   if ([checkpoints, withdrawals, marks, fundingReceipts, traceTransactions].some(n => !Number.isSafeInteger(n) || n < 0) || withdrawals > checkpoints || marks > checkpoints) throw new Error('Invalid reconstruction estimate');
-  const methods = { eth_chainId: 1, eth_getCode: 2, eth_getBlockByNumber: 1 + 2 * checkpoints, eth_call: checkpoints + withdrawals + marks, eth_getTransactionReceipt: fundingReceipts, debug_traceTransaction: traceTransactions };
+  if (!Number.isSafeInteger(diagnosticHeaders) || diagnosticHeaders < 0 || diagnosticHeaders > 2) throw new Error('Invalid canonical account header count');
+  const methods = { eth_chainId: 1, eth_getCode: 2, eth_getBlockByNumber: 1 + 2 * checkpoints + diagnosticHeaders, eth_call: checkpoints + withdrawals + marks, eth_getTransactionReceipt: fundingReceipts, debug_traceTransaction: traceTransactions };
   return { methods, total: Object.values(methods).reduce((n, v) => n + v, 0) };
 }
 export function discoveryCalls(blocks: bigint, pageSize: bigint, eventBlocks = 0n, resumes = 0n) {

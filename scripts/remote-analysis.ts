@@ -2,7 +2,7 @@
 import { appendFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { authorizeRun, contextHash, github, loadState, saveState, saveRunCheckpoint, reserveBudgetedRun, requireResume, snapshot, restoreSnapshot, reservationRpc, rejectSecrets, REPOSITORY, WORKFLOW, type RunIdentity } from '../lib/analysis/remote';
+import { authorizeRun, contextHash, github, loadState, saveState, saveRunCheckpoint, reserveBudgetedRun, requireResume, refuseActiveLegacyJob, snapshot, restoreSnapshot, reservationRpc, rejectSecrets, REPOSITORY, WORKFLOW, type RunIdentity } from '../lib/analysis/remote';
 import { usagePolicy, policyHash, usageMeter, usageSummary, formatNanoUsd, type UsageAllocation } from '../lib/analysis/usageBudget';
 import { atomicJson, context, getJob, jobFolder, jobKey, readJson, storeRoot, submit, updateJob } from '../lib/analysis/store';
 import { positionIdentity } from '../lib/domain/position';
@@ -35,6 +35,7 @@ async function main() {
     const plan = positionPlan(id);
     if (plan.r.events.filter(e => e.type === 'swap').length >= 100) throw new Error('Remote pilot requires fewer than 100 swaps');
     const api = github(), loaded = await loadState(api);
+    refuseActiveLegacyJob(loaded.state, id, c);
     const resuming = process.env.RESUME_CHECKPOINT === 'true';
     requireResume(loaded.state, key, resuming);
     if (resuming) {

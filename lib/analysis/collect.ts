@@ -11,12 +11,14 @@ import { signedPair } from '../chain/decode';
 import { RpcFailure, type Rpc } from '../chain/rpc';
 import { atomicJson, readJson, AnalysisLimit } from './store';
 import { replayEligibility } from './eligibility';
+import { collectProviderEvidence, ACCOUNT_SCOPE } from './providerEvidence';
+import { providerVerificationVersion } from './providerVersion';
 export function positionPlan(id: string) {
   const h = historyInputs(), r = positionReplay(h.logs, h.abi, id), [owner, salt] = id.split(':');
   const swapTransactions = [...new Set(r.events.filter(e => e.type === 'swap').map(e => e.transactionHash))];
   const fundingTransactions = [...new Set(r.funding.map(f => f.transactionHash))];
   const blocks = [...new Set([h.acquisition.to, (BigInt(r.events[0].block) - 1n).toString(), (BigInt(r.events.at(-1)!.block) - 1n).toString(), ...r.events.map(e => e.block)])].sort((a, b) => BigInt(a) < BigInt(b) ? -1 : 1);
-  const eligibility = replayEligibility({ swaps: r.events.filter(e => e.type === 'swap').length, checkpoints: blocks.length, fundingTransactions: fundingTransactions.length, traces: swapTransactions.length });
+  const eligibility = replayEligibility({ swaps: r.events.filter(e => e.type === 'swap').length, checkpoints: blocks.length, fundingTransactions: fundingTransactions.length, traces: swapTransactions.length, accountDiagnosticHeaders: 2 });
   const upperBound = eligibility.maxRequests;
   if (eligibility.mode !== 'OWNER_PILOT') throw new AnalysisLimit('UNSUPPORTED', eligibility.reason);
   return { h, r, owner, salt, swapTransactions, fundingTransactions, blocks, upperBound };
@@ -39,9 +41,10 @@ export async function collectPosition(id: string, slug: string, root: URL, rpc: 
   const head = await rpc('eth_getBlockByNumber', [headTag, false]) as any;
   if (head?.hash !== h.acquisition.endHash) throw new Error('Pinned indexed head is no longer canonical');
   if (keccak256(await rpc('eth_getCode', [POOL, headTag]) as Hex) !== RUNTIME_CODE_HASH) throw new Error('Pool runtime changed');
-  const ownerCode = await rpc('eth_getCode', [owner, '0x' + BigInt(r.events[0].block).toString(16)]);
-  if (typeof ownerCode !== 'string' || !/^0x(?:[0-9a-fA-F]{2})*$/.test(ownerCode)) throw new RpcFailure('invalid');
-  if (ownerCode !== '0x') throw new AnalysisLimit('UNSUPPORTED', 'Contract-provider beneficial ownership requires separate proof');
+  const depositHash = h.logs.find(l => BigInt(l.blockNumber).toString() === r.events[0].block)?.blockHash;
+  if (!depositHash) throw new Error('No canonical deposit block in the source index');
+  status.phase = 'Recording historical provider code; beneficial owner remains unknown'; progress();
+  await collectProviderEvidence(owner, r.events[0].block, depositHash, root, rpc);
   const batchAbi = h.abi.filter(e => e.type === 'function' && e.name === 'extsload' && e.inputs.length === 1 && e.inputs[0].type === 'bytes32[]');
   const slots: Hex[] = [], bins = Array.from({ length: 100 }, (_, i) => BigInt(i - 50));
   for (const bin of bins) {
@@ -100,6 +103,6 @@ export async function collectPosition(id: string, slug: string, root: URL, rpc: 
     progress();
   }
   save('quotes.json', quotes);
-  save('config.json', { id, slug, name: 'Owner-requested public position', pool: POOL, chainId: 56, through: h.acquisition.to, indexEndHash: h.acquisition.endHash, sourceHash: fingerprint.sourceHash, funding: r.funding, eventCount: r.events.length, swaps: r.events.filter(e => e.type === 'swap').length, final: r.final, ownerCode });
+  save('config.json', { schema: 2, analyticsScope: ACCOUNT_SCOPE, beneficialOwner: 'UNKNOWN', providerVerificationVersion: providerVerificationVersion(), id, slug, name: 'Owner-requested provider position', pool: POOL, chainId: 56, through: h.acquisition.to, indexEndHash: h.acquisition.endHash, sourceHash: fingerprint.sourceHash, funding: r.funding, eventCount: r.events.length, swaps: r.events.filter(e => e.type === 'swap').length, final: r.final });
   status.status = 'PARTIAL'; status.phase = 'Captured; independent reconciliation required'; progress();
 }

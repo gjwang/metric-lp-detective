@@ -45,7 +45,8 @@ export function offlinePreflight(id: string) {
   const marks = p.blocks.filter(b => b === p.h.acquisition.to || p.r.events.some(e => e.block === b)).length;
   return { id, confidence: 'INDEX_PREFLIGHT_NOT_INDEPENDENTLY_VERIFIED', from: p.h.acquisition.from, through: p.h.acquisition.to,
     swaps: p.r.events.filter(e => e.type === 'swap').length, checkpoints: p.blocks.length, traces: p.swapTransactions.length,
-    expected: reconstructionCalls(p.blocks.length, withdrawals, marks, p.fundingTransactions.length, p.swapTransactions.length), hardLimit: p.upperBound,
+    accountType: 'ACCOUNT_TYPE_UNCONFIRMED', analyticsScope: 'PROVIDER_POSITION_ONLY', beneficialOwner: 'UNKNOWN', accountEligibility: 'Requires a valid canonical historical code response; event counts never prove account type',
+    expected: reconstructionCalls(p.blocks.length, withdrawals, marks, p.fundingTransactions.length, p.swapTransactions.length, 2), hardLimit: p.upperBound,
     events: p.r.events.map(e => ({ type: e.type, block: e.block, transactionHash: e.transactionHash })),
     closedInIndex: [...shares.values()].every(n => n === 0n), moneyAuthorised: false, liveRequestsIssued: 0 };
 }

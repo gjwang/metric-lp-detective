@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "status": "PROPOSAL_ONLY_NOT_IMPLEMENTED_OR_AUTHORISED",
+  "parentFingerprint": "be9fea53dbea2df940b63f74d7b4a95365ee2f34bd0546405ae201e5659557d7",
+  "source": {
+    "positionId": "0x1758e1ff8ac0b6a070976069d529b0d22117f7e0:841151828934528345668794",
+    "chainId": 56,
+    "pool": "0xdc2b2f96bc1eb01e7286c688d5354e081af188c4",
+    "indexEnd": "130841348",
+    "indexEndHash": "0xd4b50c9afe0934057d61ccf2821e30c5b6dbf3553b6348ccb846e9f5a074ea7e",
+    "sourceSha256": "a5c0acd28ff716e352bd93bef43b1736a780a24d4f3dbd3c8edb64083a398220",
+    "accountingVersion": "50eddbdfa73d44c51460956b03a786c6f90a12f04e8b674af4f33be05ffa7e16"
+  },
+  "accountType": "ACCOUNT_TYPE_UNCONFIRMED",
+  "beneficialOwner": "UNKNOWN",
+  "counts": {
+    "swaps": 11,
+    "traceTransactions": 11,
+    "checkpoints": 16,
+    "ownedCheckpointWithdrawals": 13,
+    "marks": 14,
+    "fundingTransactions": 2
+  },
+  "events": [
+    {
+      "block": "129887823",
+      "transactionHash": "0xd33354fc9367f9f23ec67e3c65d6ba671bd65426f50ccdb4b365a5a32bccde2d",
+      "tokens": [
+        "19999999999999999996",
+        "2715588724921154372704"
+      ]
+    },
+    {
+      "block": "129891306",
+      "transactionHash": "0xb6991f8e2392f09a7a1c8dd9767ccc5a24fa85d3b19464ebd0668f1426f64263",
+      "tokens": [
+        "0",
+        "-4374292299541693755752"
+      ]
+    }
+  ],
+  "currentAdmission": "REFUSED_BEFORE_RPC: more than ten trace transactions; current lifetime cap remains 100",
+  "phaseA": {
+    "purpose": "Canonical account + all state/removal/receipt/mark evidence + first ten trace transactions",
+    "expectedRequests": 93,
+    "hardAttempts": 98,
+    "traceCeiling": 10
+  },
+  "phaseB": {
+    "purpose": "Same parent, new approved UTC day: revalidate all saved checkpoint/code boundaries, refresh pool runtime, acquire last trace, confirm pinned head again; independently verify entire parent",
+    "expectedRequests": 23,
+    "hardAttempts": 24,
+    "traceCeiling": 1,
+    "formula": "C canonical state headers + chain/head/runtime/code-boundary setup 5 + final trace 1 + final head 1"
+  },
+  "proposedParentHardAttempts": 122,
+  "proposedParentExpiryHours": 48,
+  "dailyRequestCapUnchanged": 100,
+  "dailyTraceCapUnchanged": 10,
+  "requiredApprovals": [
+    "Explicit parent lifetime cap above current 100 (no fresh-job counter reset)",
+    "Explicit 48-hour parent expiry and two named UTC-day phase ceilings",
+    "Implement and validate phase-aware capture/checksum/recovery and final reconciliation before any live request"
+  ],
+  "rules": {
+    "noPaidMode": true,
+    "noAutomaticRetry": true,
+    "noRefund": true,
+    "noSuccessBeforeCompleteParentReconciliation": true,
+    "noPublishedPhaseASample": true,
+    "noLegacyReservationReset": true
+  },
+  "newRpcRequests": 0
+}

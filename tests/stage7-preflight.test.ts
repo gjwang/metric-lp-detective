@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { historyInputs } from '../scripts/reconstruct-history';
 import { indexedSwapActivity, offlinePreflight } from '../lib/analysis/preflight';
 import { GET as release } from '../app/api/release/route';
-const h = historyInputs(), config = JSON.parse(readFileSync('config/production-acceptance.json', 'utf8'));
+const h = historyInputs(), config = { positionId: JSON.parse(readFileSync('fixtures/research/stage7-fifth-pilot-failure.json', 'utf8')).positionId };
 describe('Stage 7 genuine new-provider offline preflight', () => {
   it('counts attributable swaps rather than all pool swaps during the LP lifetime', () => {
     const activity = indexedSwapActivity(h.logs, h.abi);
@@ -22,7 +22,9 @@ describe('Stage 7 genuine new-provider offline preflight', () => {
   }, 60000);
   it('reproduces the new fully withdrawn candidate without live calls or registration', () => {
     const p = offlinePreflight(config.positionId);
-    expect(p).toMatchObject({ confidence: 'INDEX_PREFLIGHT_NOT_INDEPENDENTLY_VERIFIED', swaps: 0, traces: 0, checkpoints: 5, closedInIndex: true, expected: { total: 26 }, hardLimit: 31, liveRequestsIssued: 0, moneyAuthorised: false });
+    // Stage 8 adds two canonical code headers; historical Stage 7's 26/31
+    // remains unchanged in its immutable failed-run record.
+    expect(p).toMatchObject({ confidence: 'INDEX_PREFLIGHT_NOT_INDEPENDENTLY_VERIFIED', accountType: 'ACCOUNT_TYPE_UNCONFIRMED', swaps: 0, traces: 0, checkpoints: 5, closedInIndex: true, expected: { total: 28 }, hardLimit: 33, liveRequestsIssued: 0, moneyAuthorised: false });
     expect(p.events.map(e => [e.type, e.block])).toEqual([['deposit', '128019133'], ['withdrawal', '128019250']]);
     expect(JSON.parse(readFileSync('.web-data/registry.json', 'utf8')).some((p: any) => p.id === config.positionId)).toBe(existsPilotProof());
   }, 60000);
