@@ -765,3 +765,20 @@ scan (267 project files, zero findings). Existing PARTIAL oracle and
 NOT_CAPTURED accounting statuses remain unchanged. No live RPC, credentials,
 workflow dispatch, quota use or deployment. Independent source/test review
 APPROVE; this paragraph only records the subsequent deterministic checks.
+## Upstream integration follow-through (2026-11-03 UTC)
+
+Merge commit `93a96b6155faa6ff2b8e778c7d5d250e710d25c9` integrates upstream
+`63dda0deeb301ccf0bae085b386aee1cbb396f8b` into the existing PR #19 branch.
+Only the development log conflicted: both upstream and the original proposal
+records are retained. The classifier and RPC tests are byte-identical to the
+original proposal `a5819addb88a99505720a2457a0ca120f9227158`; all other paths
+match upstream. Independent read-only merge review approved this exact tree.
+
+On Node 24.21.0, the integrated tree passes complete `npm run check`
+(exit 0, 150 tests in 21 suites, 160.59 seconds), including typecheck and the
+saved fixture/history/oracle/performance/outcome/accounting checks. The project
+credential scan checks 270 files with zero findings. The prior 135-test result
+above remains historical; additional upstream tests are not new classifier
+coverage. Existing PARTIAL oracle and NOT_CAPTURED accounting states remain.
+No live RPC, new quota, workflow dispatch or deployment was used. Push, upstream
+review/merge and Vercel authorization are separate outcomes, not claimed here.
